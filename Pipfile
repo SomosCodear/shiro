@@ -1,0 +1,19 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+flake8 = "*"
+flake8-commas = "*"
+
+[packages]
+django = "*"
+zappa = "*"
+psycopg2-binary = "*"
+djangorestframework = "*"
+djangorestframework-jsonapi = {extras = ["django-filter"],version = "*"}
+django-debug-toolbar = "*"
+
+[requires]
+python_version = "3.7"
