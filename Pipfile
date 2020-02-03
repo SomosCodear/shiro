@@ -15,6 +15,7 @@ djangorestframework = "*"
 djangorestframework-jsonapi = {extras = ["django-filter"],version = "*"}
 django-debug-toolbar = "*"
 django-model-utils = "*"
+django-money = "*"
 
 [requires]
 python_version = "3.7"
