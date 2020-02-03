@@ -46,7 +46,12 @@ class DiscountCode(models.Model):
 
 
 class DiscountCodeRestriction(models.Model):
-    TYPES = choices.Choices(('DATE', 'Fecha'), ('STOCK', 'Cantidad'), ('EMAIL', 'Email'))
+    TYPES = choices.Choices(
+        ('DATE', 'Fecha'),
+        ('STOCK', 'Cantidad'),
+        ('EMAIL', 'Email'),
+        ('DOMAIN', 'Dominio'),
+    )
 
     discount_code = models.ForeignKey(
         'DiscountCode',
