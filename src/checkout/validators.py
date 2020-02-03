@@ -11,7 +11,7 @@ def validate_list(value):
 
 
 def validate_single_value(value):
-    if isinstance(value, list) or isinstance(value, object):
+    if isinstance(value, list) or isinstance(value, dict):
         raise validators.ValidationError(
             _('%(value)s is not a single value'),
             params={'value': value},
