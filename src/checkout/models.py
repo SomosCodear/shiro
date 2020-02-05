@@ -105,15 +105,11 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='items')
     item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='order_items')
-    amount = models.PositiveSmallIntegerField(
-        default=1,
-        validators=[validators.MinValueValidator(1)],
-    )
     price = money_fields.MoneyField(max_digits=7, decimal_places=2, default_currency='ARS')
     fulfilled = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.amount} {self.item} ({self.price})'
+        return f'{self.item} ({self.price})'
 
 
 class OrderItemOption(models.Model):
