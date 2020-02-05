@@ -1,3 +1,8 @@
-from django.shortcuts import render
+from rest_framework_json_api import views
 
-# Create your views here.
+from . import models, serializers
+
+
+class ItemViewSet(views.ReadOnlyModelViewSet):
+    queryset = models.Item.objects.order_by('id')
+    serializer_class = serializers.ItemSerializer
