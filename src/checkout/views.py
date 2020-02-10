@@ -10,4 +10,5 @@ class ItemViewSet(views.ReadOnlyModelViewSet):
 
 class CustomerViewSet(views.viewsets.GenericViewSet,
                       views.viewsets.mixins.CreateModelMixin):
+    queryset = models.Customer.objects.order_by('id')
     serializer_class = serializers.CustomerSerializer
