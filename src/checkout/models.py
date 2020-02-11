@@ -47,7 +47,12 @@ class DiscountCode(models.Model):
         null=True,
         validators=[validators.MaxValueValidator(100)],
     )
-    fixed_value = models.PositiveIntegerField(null=True)
+    fixed_value = money_fields.MoneyField(
+        max_digits=7,
+        decimal_places=2,
+        default_currency='ARS',
+        null=True,
+    )
 
     def __str__(self):
         return f'{self.code} ({self.description})'
