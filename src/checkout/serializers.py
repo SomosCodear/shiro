@@ -38,3 +38,25 @@ class CustomerSerializer(serializers.ModelSerializer):
         customer = models.Customer.objects.create(user=user, **validated_data)
 
         return customer
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        many=True,
+        queryset=models.Item.objects.all(),
+    )
+
+    class Meta:
+        model = models.Order
+        fields = ('id', 'customer', 'items', 'notes', 'discount_code')
+        read_only_fields = ('customer',)
+
+    def create(self, validated_data):
+        items = validated_data.pop('items')
+        order = models.Order.objects.create(**validated_data)
+
+        for item in items:
+            order.items.create(item=item, price=item.price)
+
+        return order
