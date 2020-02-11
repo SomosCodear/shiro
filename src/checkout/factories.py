@@ -42,3 +42,13 @@ class CustomerFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = models.Customer
+
+
+class DiscountCodeFactory(factory.DjangoModelFactory):
+    code = factory.Faker('lexify', text='??????')
+    description = factory.Faker('paragraph')
+    type = models.DiscountCode.TYPES.ORDER
+    percentage = factory.Faker('random_int', min=5, max=50)
+
+    class Meta:
+        model = models.DiscountCode
