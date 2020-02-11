@@ -96,7 +96,7 @@ class Order(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
-    notes = models.TextField()
+    notes = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f'Orden {self.id} ({self.customer})'
