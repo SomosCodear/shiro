@@ -1,5 +1,6 @@
-from rest_framework_json_api import serializers
 from django.contrib import auth
+from django.utils.translation import gettext_lazy as _
+from rest_framework_json_api import serializers
 
 from . import models
 
@@ -51,6 +52,14 @@ class OrderSerializer(serializers.ModelSerializer):
         model = models.Order
         fields = ('id', 'customer', 'items', 'notes', 'discount_code')
         read_only_fields = ('customer',)
+
+    def validate_items(self, items):
+        if len(items) == 0:
+            raise serializers.ValidationError(_('Your order must include at least one item'))
+        elif not any(item.type == models.Item.TYPES.PASS for item in items):
+            raise serializers.ValidationError(_('Any order should include at least one pass'))
+
+        return items
 
     def create(self, validated_data):
         items = validated_data.pop('items')

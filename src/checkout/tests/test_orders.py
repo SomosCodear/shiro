@@ -142,3 +142,30 @@ class OrderCreateTestCase(test.APITestCase):
 
         order = models.Order.objects.first()
         self.assertEqual(order.discount_code, discount_code)
+
+    def test_should_validate_at_least_one_item(self):
+        # arrange
+        order_data = {}
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/items')
+
+    def test_should_validate_at_least_one_pass(self):
+        # arrange
+        items = [self.items[2]]
+        order_data = {
+            'items': [item.id for item in items],
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/items')
