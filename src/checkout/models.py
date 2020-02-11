@@ -111,6 +111,8 @@ class Order(models.Model):
         if self.discount_code is not None:
             if self.discount_code.fixed_value is not None:
                 total -= self.discount_code.fixed_value
+            elif self.discount_code.percentage is not None:
+                total -= total * self.discount_code.percentage / 100
 
         return total
 

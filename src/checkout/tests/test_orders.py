@@ -210,7 +210,25 @@ class OrderCreateTestCase(test.APITestCase):
         )
 
     def test_should_return_total_with_percentage_discount(self):
-        pass
+        # arrange
+        items = [self.items[0], self.items[2]]
+        total = sum(item.price for item in items)
+        discount_code = factories.DiscountCodeFactory()
+        order_data = {
+            'items': [item.id for item in items],
+            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            response.data['total'],
+            str(utils.quantize_decimal((total - total * discount_code.percentage / 100).amount)),
+        )
 
     def test_should_allow_to_include_items(self):
         pass
