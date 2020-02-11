@@ -105,9 +105,14 @@ class Order(models.Model):
     def __str__(self):
         return f'Orden {self.id} ({self.customer})'
 
-    @property
-    def total(self):
-        return sum(item.price for item in self.items.all())
+    def calculate_total(self):
+        total = sum(item.price for item in self.items.all())
+
+        if self.discount_code is not None:
+            if self.discount_code.fixed_value is not None:
+                total -= self.discount_code.fixed_value
+
+        return total
 
 
 class OrderItem(models.Model):

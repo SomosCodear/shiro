@@ -1,5 +1,6 @@
 from django import urls
 from rest_framework import test, status
+from djmoney import money
 
 from user import factories as user_factories
 from .. import factories, models
@@ -185,3 +186,43 @@ class OrderCreateTestCase(test.APITestCase):
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['total'], str(total.amount))
+
+    def test_should_return_total_with_fixed_value_discount(self):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        total = sum(item.price for item in items)
+        discount = money.Money(total.amount / 3, 'ARS')
+        discount_code = factories.DiscountCodeFactory(percentage=None, fixed_value=discount)
+        order_data = {
+            'items': [item.id for item in items],
+            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            response.data['total'],
+            str(utils.quantize_decimal((total - discount).amount)),
+        )
+
+    def test_should_return_total_with_percentage_discount(self):
+        pass
+
+    def test_should_allow_to_include_items(self):
+        pass
+
+    def test_included_items_should_return_final_price(self):
+        pass
+
+    def test_included_items_should_return_final_price_with_fixed_value_discount(self):
+        pass
+
+    def test_included_items_should_return_final_price_with_percentage_discount(self):
+        pass
+
+    def test_should_create_payment(self):
+        pass

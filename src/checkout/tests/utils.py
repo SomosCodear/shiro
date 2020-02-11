@@ -1,3 +1,6 @@
+import decimal
+
+
 def build_json_api_identifier(type, id):
     return {
         'type': type,
@@ -12,3 +15,7 @@ def build_json_api_payload(type, data):
             'attributes': data,
         },
     }
+
+
+def quantize_decimal(value):
+    return value.quantize(decimal.Decimal('0.01'))

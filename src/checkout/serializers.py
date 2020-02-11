@@ -48,7 +48,7 @@ class OrderSerializer(serializers.ModelSerializer):
         many=True,
         queryset=models.Item.objects.all(),
     )
-    total = djmoney_serializers.MoneyField(14, 2, read_only=True)
+    total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
 
     class Meta:
         model = models.Order
