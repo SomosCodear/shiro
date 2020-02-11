@@ -45,10 +45,9 @@ class DiscountCode(models.Model):
     type = models.CharField(max_length=10, choices=TYPES)
     percentage = models.PositiveIntegerField(
         null=True,
-        blank=True,
         validators=[validators.MaxValueValidator(100)],
     )
-    fixed_value = models.PositiveIntegerField(null=True, blank=True)
+    fixed_value = models.PositiveIntegerField(null=True)
 
     def __str__(self):
         return f'{self.code} ({self.description})'
