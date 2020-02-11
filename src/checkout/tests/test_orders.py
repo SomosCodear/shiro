@@ -169,3 +169,19 @@ class OrderCreateTestCase(test.APITestCase):
         # assert
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/items')
+
+    def test_should_return_total(self):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        total = sum(item.price for item in items)
+        order_data = {
+            'items': [item.id for item in items],
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['total'], str(total.amount))

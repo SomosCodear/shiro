@@ -1,6 +1,7 @@
 from django.contrib import auth
 from django.utils.translation import gettext_lazy as _
 from rest_framework_json_api import serializers
+from djmoney.contrib import django_rest_framework as djmoney_serializers
 
 from . import models
 
@@ -47,10 +48,11 @@ class OrderSerializer(serializers.ModelSerializer):
         many=True,
         queryset=models.Item.objects.all(),
     )
+    total = djmoney_serializers.MoneyField(14, 2, read_only=True)
 
     class Meta:
         model = models.Order
-        fields = ('id', 'customer', 'items', 'notes', 'discount_code')
+        fields = ('id', 'customer', 'items', 'notes', 'discount_code', 'total')
         read_only_fields = ('customer',)
 
     def validate_items(self, items):
