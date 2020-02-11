@@ -1,6 +1,7 @@
 import random
 import factory
 
+from user import factories as user_factories
 from . import models
 
 
@@ -33,3 +34,11 @@ class ItemOptionFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = models.ItemOption
+
+
+class CustomerFactory(factory.DjangoModelFactory):
+    user = factory.SubFactory(user_factories.UserFactory)
+    identity_document = factory.Faker('random_number', digits=8)
+
+    class Meta:
+        model = models.Customer
