@@ -4,19 +4,19 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-flake8 = "*"
-flake8-commas = "*"
+flake8 = "~=3.7.9"
+flake8-commas = "~=2.0.0"
 
 [packages]
-django = "*"
-zappa = "*"
-psycopg2-binary = "*"
-djangorestframework = "*"
-djangorestframework-jsonapi = {extras = ["django-filter"],version = "*"}
-django-debug-toolbar = "*"
-django-model-utils = "*"
-django-money = "*"
-factory-boy = "*"
+django = "~=3.0.3"
+zappa = "~=0.48.2"
+psycopg2-binary = "~=2.8.4"
+djangorestframework = "~=3.11.0"
+djangorestframework-jsonapi = {extras = ["django-filter"],version = "~=3.0.0"}
+django-debug-toolbar = "~=2.2"
+django-model-utils = "~=4.0.0"
+django-money = "~=1.0"
+factory-boy = "~=2.12.0"
 
 [requires]
 python_version = "3.7"
