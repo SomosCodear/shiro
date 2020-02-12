@@ -11,6 +11,7 @@ class Item(models.Model):
     TYPES = choices.Choices(('PASS', 'Pase'), ('ADDON', 'Addon'))
 
     name = models.CharField(max_length=200)
+    image = models.ImageField(upload_to='image/items/', null=True)
     type = models.CharField(max_length=10, choices=TYPES)
     price = money_fields.MoneyField(max_digits=7, decimal_places=2, default_currency='ARS')
     stock = models.PositiveIntegerField(default=0)
