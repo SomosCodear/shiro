@@ -42,6 +42,15 @@ class CustomerSerializer(serializers.ModelSerializer):
         return customer
 
 
+class OrderItemSerializer(serializers.ModelSerializer):
+    total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
+
+    class Meta:
+        model = models.OrderItem
+        fields = ('id', 'item', 'price', 'total')
+        read_only_fields = ('price',)
+
+
 class OrderSerializer(serializers.ModelSerializer):
     items = serializers.PrimaryKeyRelatedField(
         write_only=True,
@@ -49,6 +58,10 @@ class OrderSerializer(serializers.ModelSerializer):
         queryset=models.Item.objects.all(),
     )
     total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
+
+    included_serializers = {
+        'items': OrderItemSerializer,
+    }
 
     class Meta:
         model = models.Order

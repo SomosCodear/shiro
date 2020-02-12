@@ -1,3 +1,4 @@
+import json
 from django import urls
 from rest_framework import test, status
 from djmoney import money
@@ -230,17 +231,151 @@ class OrderCreateTestCase(test.APITestCase):
             str(utils.quantize_decimal((total - total * discount_code.percentage / 100).amount)),
         )
 
+    def test_should_return_total_with_fixed_value_item_discount(self):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        discount = self.items[0].price / 3
+        discount_code = factories.DiscountCodeFactory(
+            type=models.DiscountCode.TYPES.ITEM,
+            percentage=None,
+            fixed_value=discount,
+            items=items[:1],
+        )
+        item_totals = [
+            items[0].price.amount - discount.amount,
+            items[1].price.amount,
+        ]
+        order_data = {
+            'items': [item.id for item in items],
+            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['total'], str(utils.quantize_decimal(sum(item_totals))))
+
+    def test_should_return_total_with_percentage_item_discount(self):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        discount_code = factories.DiscountCodeFactory(
+            type=models.DiscountCode.TYPES.ITEM,
+            items=items[:1],
+        )
+        item_totals = [
+            items[0].price.amount - items[0].price.amount * discount_code.percentage / 100,
+            items[1].price.amount,
+        ]
+        order_data = {
+            'items': [item.id for item in items],
+            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['total'], str(utils.quantize_decimal(sum(item_totals))))
+
     def test_should_allow_to_include_items(self):
-        pass
+        # arrange
+        items = [self.items[0], self.items[2]]
+        order_data = {
+            'items': [item.id for item in items],
+        }
+        payload = utils.build_json_api_payload('order', order_data)
 
-    def test_included_items_should_return_final_price(self):
-        pass
+        # act
+        response = self.client.post(f'{self.url}?include=items', payload)
 
-    def test_included_items_should_return_final_price_with_fixed_value_discount(self):
-        pass
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_included_items_should_return_final_price_with_percentage_discount(self):
-        pass
+        order = models.Order.objects.first()
+        self.assertListEqual(
+            [int(item['id']) for item in json.loads(response.content)['included']],
+            list(order.items.values_list('id', flat=True)),
+        )
+
+    def test_included_items_should_return_price(self):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        order_data = {
+            'items': [item.id for item in items],
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(f'{self.url}?include=items', payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertListEqual(
+            [item['attributes']['price'] for item in json.loads(response.content)['included']],
+            [str(utils.quantize_decimal(item.price.amount)) for item in items],
+        )
+
+    def test_included_items_should_return_price_with_fixed_value_discount(self):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        discount = self.items[0].price / 3
+        discount_code = factories.DiscountCodeFactory(
+            type=models.DiscountCode.TYPES.ITEM,
+            percentage=None,
+            fixed_value=discount,
+            items=items[:1],
+        )
+        item_totals = [
+            items[0].price.amount - discount.amount,
+            items[1].price.amount,
+        ]
+        order_data = {
+            'items': [item.id for item in items],
+            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(f'{self.url}?include=items', payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertListEqual(
+            [item['attributes']['total'] for item in json.loads(response.content)['included']],
+            [str(utils.quantize_decimal(total)) for total in item_totals],
+        )
+
+    def test_included_items_should_return_price_with_percentage_discount(self):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        discount_code = factories.DiscountCodeFactory(
+            type=models.DiscountCode.TYPES.ITEM,
+            items=items[:1],
+        )
+        item_totals = [
+            items[0].price.amount - items[0].price.amount * discount_code.percentage / 100,
+            items[1].price.amount,
+        ]
+        order_data = {
+            'items': [item.id for item in items],
+            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(f'{self.url}?include=items', payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertListEqual(
+            [item['attributes']['total'] for item in json.loads(response.content)['included']],
+            [str(utils.quantize_decimal(total)) for total in item_totals],
+        )
 
     def test_should_create_payment(self):
         pass

@@ -52,3 +52,12 @@ class DiscountCodeFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = models.DiscountCode
+
+    @factory.post_generation
+    def items(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            for item in extracted:
+                self.items.add(item)

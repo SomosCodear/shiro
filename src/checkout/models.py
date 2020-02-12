@@ -57,14 +57,31 @@ class DiscountCode(models.Model):
     def __str__(self):
         return f'{self.code} ({self.description})'
 
-    def calculate_discounted_total(self, order):
+    def calculate_discounted_total(self, total):
+        if self.fixed_value is not None:
+            total -= self.fixed_value
+        elif self.percentage is not None:
+            total -= total * self.percentage / 100
+
+        return total
+
+    def calculate_order_item_discounted_total(self, order_item):
+        total = order_item.price
+
+        if self.type == self.TYPES.ITEM and order_item.item in self.items.all():
+            total = self.calculate_discounted_total(total)
+
+        return total
+
+    def calculate_order_discounted_total(self, order):
         total = order.calculate_items_total()
 
         if self.type == self.TYPES.ORDER:
-            if self.fixed_value is not None:
-                total -= self.fixed_value
-            elif self.percentage is not None:
-                total -= total * self.percentage / 100
+            total = self.calculate_discounted_total(total)
+        elif self.type == self.TYPES.ITEM:
+            total = sum(
+                self.calculate_order_item_discounted_total(item) for item in order.items.all()
+            )
 
         return total
 
@@ -123,7 +140,7 @@ class Order(models.Model):
         if self.discount_code is None:
             total = self.calculate_items_total()
         else:
-            total = self.discount_code.calculate_discounted_total(self)
+            total = self.discount_code.calculate_order_discounted_total(self)
 
         return total
 
@@ -136,6 +153,14 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f'{self.item} ({self.price})'
+
+    def calculate_total(self):
+        total = self.price
+
+        if self.order.discount_code is not None:
+            total = self.order.discount_code.calculate_order_item_discounted_total(self)
+
+        return total
 
 
 class OrderItemOption(models.Model):
