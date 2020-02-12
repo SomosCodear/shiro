@@ -44,10 +44,12 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
+    name = serializers.CharField(source='item.name', read_only=True)
+    image = serializers.ImageField(source='item.image', read_only=True)
 
     class Meta:
         model = models.OrderItem
-        fields = ('id', 'item', 'price', 'total')
+        fields = ('id', 'item', 'name', 'image', 'price', 'total')
         read_only_fields = ('price',)
 
 
