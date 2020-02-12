@@ -176,7 +176,7 @@ class OrderItemOption(models.Model):
 class Invoice(models.Model):
     order = models.OneToOneField('Order', on_delete=models.CASCADE)
     number = models.PositiveIntegerField()
-    file = models.FileField(upload_to='invoices/')
+    file = models.FileField(upload_to='documents/invoices/')
 
     def __str__(self):
         return f'Factura {self.number} de {self.order}'
@@ -227,7 +227,7 @@ class CancellationItem(models.Model):
 class CreditNote(models.Model):
     cancellation = models.OneToOneField('Cancellation', on_delete=models.CASCADE)
     number = models.PositiveIntegerField()
-    file = models.FileField(upload_to='credit_notes/')
+    file = models.FileField(upload_to='documents/credit_notes/')
 
     def __str__(self):
         return f'Nota de crédito de {self.cancellation.order}'
