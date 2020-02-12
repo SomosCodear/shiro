@@ -67,7 +67,7 @@ class DiscountCode(models.Model):
         return total
 
     def calculate_order_item_discounted_total(self, order_item):
-        total = order_item.price
+        total = order_item.calculate_base_total()
 
         if self.type == self.TYPES.ITEM and order_item.item in self.items.all():
             total = self.calculate_discounted_total(total)
@@ -75,7 +75,7 @@ class DiscountCode(models.Model):
         return total
 
     def calculate_order_discounted_total(self, order):
-        total = order.calculate_items_total()
+        total = order.calculate_base_total()
 
         if self.type == self.TYPES.ORDER:
             total = self.calculate_discounted_total(total)
@@ -134,12 +134,12 @@ class Order(models.Model):
     def __str__(self):
         return f'Orden {self.id} ({self.customer})'
 
-    def calculate_items_total(self):
+    def calculate_base_total(self):
         return sum(item.price for item in self.items.all())
 
     def calculate_total(self):
         if self.discount_code is None:
-            total = self.calculate_items_total()
+            total = self.calculate_base_total()
         else:
             total = self.discount_code.calculate_order_discounted_total(self)
 
@@ -150,15 +150,19 @@ class OrderItem(models.Model):
     order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='items')
     item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='order_items')
     price = money_fields.MoneyField(max_digits=7, decimal_places=2, default_currency='ARS')
+    amount = models.PositiveIntegerField(default=1)
     fulfilled = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.item} ({self.price})'
+        return f'{self.amount} {self.item} ({self.price})'
+
+    def calculate_base_total(self):
+        return self.price * self.amount
 
     def calculate_total(self):
-        total = self.price
-
-        if self.order.discount_code is not None:
+        if self.order.discount_code is None:
+            total = self.calculate_base_total()
+        else:
             total = self.order.discount_code.calculate_order_item_discounted_total(self)
 
         return total
