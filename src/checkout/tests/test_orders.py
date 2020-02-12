@@ -1,4 +1,6 @@
 import json
+import faker
+from unittest import mock
 from django import urls
 from rest_framework import test, status
 from djmoney import money
@@ -7,7 +9,14 @@ from user import factories as user_factories
 from .. import factories, models
 from . import utils
 
+fake = faker.Faker()
+PREFERENCE_ID = fake.lexify(text='?????????????????')
 
+
+@mock.patch(
+    'checkout.views.mercadopago.generate_order_preference',
+    return_value={'id': PREFERENCE_ID},
+)
 class OrderCreateTestCase(test.APITestCase):
     @classmethod
     def setUpTestData(cls):
@@ -21,7 +30,7 @@ class OrderCreateTestCase(test.APITestCase):
     def setUp(self):
         self.client.force_login(self.customer.user)
 
-    def test_should_fail_if_not_logged_in(self):
+    def test_should_fail_if_not_logged_in(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -36,7 +45,7 @@ class OrderCreateTestCase(test.APITestCase):
         # assert
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_should_fail_if_no_associated_customer(self):
+    def test_should_fail_if_no_associated_customer(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -52,7 +61,7 @@ class OrderCreateTestCase(test.APITestCase):
         # assert
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_should_create_order(self):
+    def test_should_create_order(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -69,7 +78,7 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertIsNotNone(order)
 
-    def test_should_assign_current_user_customer(self):
+    def test_should_assign_current_user_customer(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -86,7 +95,7 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertEqual(order.customer, self.customer)
 
-    def test_should_create_order_items(self):
+    def test_should_create_order_items(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -107,7 +116,7 @@ class OrderCreateTestCase(test.APITestCase):
             items,
         )
 
-    def test_should_allow_to_add_notes(self):
+    def test_should_allow_to_add_notes(self, generate_order_preference):
         # arrange
         items = [self.items[0]]
         notes = 'test notes'
@@ -126,7 +135,7 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertEqual(order.notes, notes)
 
-    def test_should_allow_to_add_discount_code(self):
+    def test_should_allow_to_add_discount_code(self, generate_order_preference):
         # arrange
         items = [self.items[0]]
         discount_code = factories.DiscountCodeFactory()
@@ -145,7 +154,7 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertEqual(order.discount_code, discount_code)
 
-    def test_should_validate_at_least_one_item(self):
+    def test_should_validate_at_least_one_item(self, generate_order_preference):
         # arrange
         order_data = {}
         payload = utils.build_json_api_payload('order', order_data)
@@ -157,7 +166,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/items')
 
-    def test_should_validate_at_least_one_pass(self):
+    def test_should_validate_at_least_one_pass(self, generate_order_preference):
         # arrange
         items = [self.items[2]]
         order_data = {
@@ -172,7 +181,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/items')
 
-    def test_should_return_total(self):
+    def test_should_return_total(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         total = sum(item.price for item in items)
@@ -188,7 +197,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['total'], str(total.amount))
 
-    def test_should_return_total_with_fixed_value_discount(self):
+    def test_should_return_total_with_fixed_value_discount(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         total = sum(item.price for item in items)
@@ -210,7 +219,7 @@ class OrderCreateTestCase(test.APITestCase):
             str(utils.quantize_decimal((total - discount).amount)),
         )
 
-    def test_should_return_total_with_percentage_discount(self):
+    def test_should_return_total_with_percentage_discount(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         total = sum(item.price for item in items)
@@ -231,7 +240,7 @@ class OrderCreateTestCase(test.APITestCase):
             str(utils.quantize_decimal((total - total * discount_code.percentage / 100).amount)),
         )
 
-    def test_should_return_total_with_fixed_value_item_discount(self):
+    def test_should_return_total_with_fixed_value_item_discount(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         discount = self.items[0].price / 3
@@ -258,7 +267,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['total'], str(utils.quantize_decimal(sum(item_totals))))
 
-    def test_should_return_total_with_percentage_item_discount(self):
+    def test_should_return_total_with_percentage_item_discount(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         discount_code = factories.DiscountCodeFactory(
@@ -282,7 +291,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['total'], str(utils.quantize_decimal(sum(item_totals))))
 
-    def test_should_allow_to_include_items(self):
+    def test_should_allow_to_include_items(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -302,7 +311,7 @@ class OrderCreateTestCase(test.APITestCase):
             list(order.items.values_list('id', flat=True)),
         )
 
-    def test_included_items_should_return_price(self):
+    def test_included_items_should_return_price(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -320,7 +329,10 @@ class OrderCreateTestCase(test.APITestCase):
             [str(utils.quantize_decimal(item.price.amount)) for item in items],
         )
 
-    def test_included_items_should_return_price_with_fixed_value_discount(self):
+    def test_included_items_should_return_price_with_fixed_value_discount(
+        self,
+        generate_order_preference,
+    ):
         # arrange
         items = [self.items[0], self.items[2]]
         discount = self.items[0].price / 3
@@ -350,7 +362,10 @@ class OrderCreateTestCase(test.APITestCase):
             [str(utils.quantize_decimal(total)) for total in item_totals],
         )
 
-    def test_included_items_should_return_price_with_percentage_discount(self):
+    def test_included_items_should_return_price_with_percentage_discount(
+        self,
+        generate_order_preference,
+    ):
         # arrange
         items = [self.items[0], self.items[2]]
         discount_code = factories.DiscountCodeFactory(
@@ -377,5 +392,24 @@ class OrderCreateTestCase(test.APITestCase):
             [str(utils.quantize_decimal(total)) for total in item_totals],
         )
 
-    def test_should_create_payment(self):
-        pass
+    def test_should_create_payment(self, generate_order_preference):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        order_data = {
+            'items': [item.id for item in items],
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        order = models.Order.objects.first()
+        generate_order_preference.assert_called_once_with(order)
+
+        payment = order.payments.first()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment.status, models.Payment.STATUS.CREATED)
+        self.assertEqual(payment.external_id, PREFERENCE_ID)

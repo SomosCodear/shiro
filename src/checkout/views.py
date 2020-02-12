@@ -1,6 +1,6 @@
 from rest_framework_json_api import views
 
-from . import models, serializers, permissions
+from . import models, serializers, permissions, mercadopago
 
 
 class ItemViewSet(views.ReadOnlyModelViewSet):
@@ -22,4 +22,8 @@ class OrderViewSet(views.viewsets.GenericViewSet,
 
     def perform_create(self, serializer):
         customer = self.request.user.customer
-        serializer.save(customer=customer)
+        order = serializer.save(customer=customer)
+
+        preference = mercadopago.generate_order_preference(order)
+        print(preference)
+        order.payments.create(external_id=preference['id'])
