@@ -30,7 +30,7 @@ class OrderCreateTestCase(test.APITestCase):
     def setUp(self):
         self.client.force_login(self.customer.user)
 
-    def test_should_fail_if_not_logged_in(self, generate_order_preference):
+    def test_should_fail_if_not_logged_in(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -45,7 +45,7 @@ class OrderCreateTestCase(test.APITestCase):
         # assert
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_should_fail_if_no_associated_customer(self, generate_order_preference):
+    def test_should_fail_if_no_associated_customer(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -61,7 +61,7 @@ class OrderCreateTestCase(test.APITestCase):
         # assert
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_should_create_order(self, generate_order_preference):
+    def test_should_create_order(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -78,7 +78,7 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertIsNotNone(order)
 
-    def test_should_assign_current_user_customer(self, generate_order_preference):
+    def test_should_assign_current_user_customer(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -95,7 +95,7 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertEqual(order.customer, self.customer)
 
-    def test_should_create_order_items(self, generate_order_preference):
+    def test_should_create_order_items(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -116,7 +116,7 @@ class OrderCreateTestCase(test.APITestCase):
             items,
         )
 
-    def test_should_allow_to_add_notes(self, generate_order_preference):
+    def test_should_allow_to_add_notes(self, *args):
         # arrange
         items = [self.items[0]]
         notes = 'test notes'
@@ -135,7 +135,7 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertEqual(order.notes, notes)
 
-    def test_should_allow_to_add_discount_code(self, generate_order_preference):
+    def test_should_allow_to_add_discount_code(self, *args):
         # arrange
         items = [self.items[0]]
         discount_code = factories.DiscountCodeFactory()
@@ -154,7 +154,7 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertEqual(order.discount_code, discount_code)
 
-    def test_should_validate_at_least_one_item(self, generate_order_preference):
+    def test_should_validate_at_least_one_item(self, *args):
         # arrange
         order_data = {}
         payload = utils.build_json_api_payload('order', order_data)
@@ -166,7 +166,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/items')
 
-    def test_should_validate_at_least_one_pass(self, generate_order_preference):
+    def test_should_validate_at_least_one_pass(self, *args):
         # arrange
         items = [self.items[2]]
         order_data = {
@@ -181,7 +181,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/items')
 
-    def test_should_return_total(self, generate_order_preference):
+    def test_should_return_total(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         total = sum(item.price for item in items)
@@ -197,7 +197,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['total'], str(total.amount))
 
-    def test_should_return_total_with_fixed_value_discount(self, generate_order_preference):
+    def test_should_return_total_with_fixed_value_discount(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         total = sum(item.price for item in items)
@@ -219,7 +219,7 @@ class OrderCreateTestCase(test.APITestCase):
             str(utils.quantize_decimal((total - discount).amount)),
         )
 
-    def test_should_return_total_with_percentage_discount(self, generate_order_preference):
+    def test_should_return_total_with_percentage_discount(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         total = sum(item.price for item in items)
@@ -240,7 +240,7 @@ class OrderCreateTestCase(test.APITestCase):
             str(utils.quantize_decimal((total - total * discount_code.percentage / 100).amount)),
         )
 
-    def test_should_return_total_with_fixed_value_item_discount(self, generate_order_preference):
+    def test_should_return_total_with_fixed_value_item_discount(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         discount = self.items[0].price / 3
@@ -267,7 +267,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['total'], str(utils.quantize_decimal(sum(item_totals))))
 
-    def test_should_return_total_with_percentage_item_discount(self, generate_order_preference):
+    def test_should_return_total_with_percentage_item_discount(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         discount_code = factories.DiscountCodeFactory(
@@ -291,7 +291,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['total'], str(utils.quantize_decimal(sum(item_totals))))
 
-    def test_should_allow_to_include_items(self, generate_order_preference):
+    def test_should_allow_to_include_items(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -311,7 +311,7 @@ class OrderCreateTestCase(test.APITestCase):
             list(order.items.values_list('id', flat=True)),
         )
 
-    def test_included_items_should_return_price(self, generate_order_preference):
+    def test_included_items_should_return_price(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         order_data = {
@@ -329,10 +329,7 @@ class OrderCreateTestCase(test.APITestCase):
             [str(utils.quantize_decimal(item.price.amount)) for item in items],
         )
 
-    def test_included_items_should_return_price_with_fixed_value_discount(
-        self,
-        generate_order_preference,
-    ):
+    def test_included_items_should_return_price_with_fixed_value_discount(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         discount = self.items[0].price / 3
@@ -362,10 +359,7 @@ class OrderCreateTestCase(test.APITestCase):
             [str(utils.quantize_decimal(total)) for total in item_totals],
         )
 
-    def test_included_items_should_return_price_with_percentage_discount(
-        self,
-        generate_order_preference,
-    ):
+    def test_included_items_should_return_price_with_percentage_discount(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         discount_code = factories.DiscountCodeFactory(
