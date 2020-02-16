@@ -336,14 +336,18 @@ class OrderCreateTestCase(test.APITestCase):
         payload = self.build_order_payload(items)
 
         # act
-        response = self.client.post(f'{self.url}?include=items', payload)
+        response = self.client.post(f'{self.url}?include=order-items.item', payload)
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         order = models.Order.objects.first()
         self.assertEqual(
-            [int(item['id']) for item in json.loads(response.content)['included']],
+            [
+                int(item['id'])
+                for item in json.loads(response.content)['included']
+                if item['type'] == 'item'
+            ],
             list(order.items.values_list('id', flat=True)),
         )
 
