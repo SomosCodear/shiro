@@ -180,6 +180,9 @@ class OrderItemOption(models.Model):
     item_option = models.ForeignKey('ItemOption', on_delete=models.CASCADE, related_name='+')
     value = postgres_fields.JSONField(validators=[custom_validators.validate_single_value])
 
+    class Meta:
+        unique_together = ('order_item', 'item_option')
+
     def __str__(self):
         return f'{self.item_option}: {self.value}'
 
