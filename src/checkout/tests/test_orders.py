@@ -111,7 +111,7 @@ class OrderCreateTestCase(test.APITestCase):
 
         order = models.Order.objects.first()
         self.assertEqual(order.items.count(), 2)
-        self.assertListEqual(
+        self.assertEqual(
             [order_item.item for order_item in order.items.all()],
             items,
         )
