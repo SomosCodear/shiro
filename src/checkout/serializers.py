@@ -42,7 +42,7 @@ class WritableResourceRelatedField(relations.ResourceRelatedField):
                 received_type=data['type'],
             )
 
-        write_representation = self.write_serializer.run_validation(data)
+        write_representation = self.write_serializer.run_validation(data.get('attributes'))
 
         return write_representation
 

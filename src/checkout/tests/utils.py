@@ -8,19 +8,16 @@ def build_json_api_identifier(type, id):
     }
 
 
-def build_json_api_payload(type, data):
+def build_json_api_resource(type, data):
     return {
-        'data': {
-            'type': type,
-            'attributes': data,
-        },
+        'type': type,
+        'attributes': data,
     }
 
 
-def build_json_api_nested_relation(type, data):
+def build_json_api_payload(type, data):
     return {
-        'type': type,
-        **data,
+        'data': build_json_api_resource(type, data),
     }
 
 

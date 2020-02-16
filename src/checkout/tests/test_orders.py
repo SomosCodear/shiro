@@ -33,7 +33,7 @@ class OrderCreateTestCase(test.APITestCase):
     def build_order_payload(self, items, discount_code=None, **kwargs):
         order_data = {
             'order-items': [
-                utils.build_json_api_nested_relation(
+                utils.build_json_api_resource(
                     'order-item',
                     {'item': utils.build_json_api_identifier('item', item.id)},
                 )
