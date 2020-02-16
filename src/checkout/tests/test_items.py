@@ -18,6 +18,7 @@ class ItemRetrieveTestCase(test.APITestCase):
                 'name': item.name,
                 'type': item.type,
                 'price': str(item.price.amount),
+                'image': None,
                 'options': [
                     {
                         'type': 'item-option',
@@ -43,6 +44,7 @@ class ItemRetrieveTestCase(test.APITestCase):
             'name': item.name,
             'type': item.type,
             'price': str(item.price.amount),
+            'image': None,
             'options': [
                 {
                     'type': 'item-option',
