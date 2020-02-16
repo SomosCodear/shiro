@@ -1,4 +1,3 @@
-import random
 import factory
 
 from user import factories as user_factories
@@ -21,14 +20,11 @@ class ItemFactory(factory.DjangoModelFactory):
 
         if extracted:
             for option in extracted:
-                self.options.add(option)
-        else:
-            for i in range(random.randint(1, 3)):
-                ItemOptionFactory(item=self)
+                option.item = self
+                option.save()
 
 
 class ItemOptionFactory(factory.DjangoModelFactory):
-    item = factory.SubFactory(ItemFactory)
     name = factory.Faker('word')
     type = factory.Faker('random_element', elements=[type[0] for type in models.ItemOption.TYPES])
 

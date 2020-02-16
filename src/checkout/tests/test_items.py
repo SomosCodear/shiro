@@ -63,7 +63,13 @@ class ItemRetrieveTestCase(test.APITestCase):
 
     def test_should_include_item_options(self):
         # arrange
-        item = self.items[5]
+        item = factories.ItemFactory(
+            options=[
+                factories.ItemOptionFactory.build(),
+                factories.ItemOptionFactory.build(),
+                factories.ItemOptionFactory.build(),
+            ],
+        )
         expected_data = [
             {
                 'type': 'item-option',
