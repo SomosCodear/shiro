@@ -84,6 +84,10 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 
 class OrderItemOptionSerializer(serializers.ModelSerializer):
+    included_serializers = {
+        'item_option': ItemOptionSerializer,
+    }
+
     class Meta:
         model = models.OrderItemOption
         fields = ('id', 'item_option', 'value')
