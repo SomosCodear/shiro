@@ -113,6 +113,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
         read_only_fields = ('price',)
 
 
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Payment
+        fields = ('id', 'status', 'external_id')
+        read_only_fields = ('status', 'external_id')
+
+
 class OrderSerializer(serializers.ModelSerializer):
     total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
     order_items = WritableResourceRelatedField(
@@ -123,12 +130,13 @@ class OrderSerializer(serializers.ModelSerializer):
 
     included_serializers = {
         'order_items': OrderItemSerializer,
+        'payments': PaymentSerializer,
     }
 
     class Meta:
         model = models.Order
-        fields = ('id', 'customer', 'order_items', 'notes', 'discount_code', 'total')
-        read_only_fields = ('customer',)
+        fields = ('id', 'customer', 'order_items', 'notes', 'discount_code', 'payments', 'total')
+        read_only_fields = ('customer', 'payments')
 
     def validate_order_items(self, order_items):
         if len(order_items) == 0:

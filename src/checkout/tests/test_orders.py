@@ -325,8 +325,9 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         order = models.Order.objects.first()
+        included = json.loads(response.content)['included']
         self.assertEqual(
-            [int(item['id']) for item in json.loads(response.content)['included']],
+            [int(item['id']) for item in included],
             list(order.order_items.values_list('id', flat=True)),
         )
 
@@ -492,3 +493,20 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertIsNotNone(payment)
         self.assertEqual(payment.status, models.Payment.STATUS.CREATED)
         self.assertEqual(payment.external_id, PREFERENCE_ID)
+
+    def test_should_allow_to_include_payment(self, generate_order_preference):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        payload = self.build_order_payload(items)
+
+        # act
+        response = self.client.post(f'{self.url}?include=payments', payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        order = models.Order.objects.first()
+        payment = order.payments.first()
+        returned_payment = json.loads(response.content)['included'][0]
+        self.assertEqual(returned_payment['type'], 'payment')
+        self.assertEqual(returned_payment['id'], str(payment.id))
