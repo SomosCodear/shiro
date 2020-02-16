@@ -351,6 +351,37 @@ class OrderCreateTestCase(test.APITestCase):
             list(order.items.values_list('id', flat=True)),
         )
 
+    def test_should_allow_to_include_options(self, *args):
+        # arrange
+        items = [factories.ItemFactory(
+            type=models.Item.TYPES.PASS,
+            options=[factories.ItemOptionFactory.build()],
+        )]
+        item_option = items[0].options.first().id
+        option = {
+            'item_option': utils.build_json_api_identifier('item-option', item_option),
+            'value': 'some value',
+        }
+        options = {'options': [utils.build_json_api_resource('order-item-option', option)]}
+        payload = self.build_order_payload(items, items_extra=[options])
+
+        # act
+        response = self.client.post(f'{self.url}?include=order-items.options', payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        included_options = [
+            included
+            for included in json.loads(response.content)['included']
+            if included['type'] == 'order-item-option'
+        ]
+        self.assertEqual(len(included_options), 1)
+        self.assertEqual(
+            included_options[0]['relationships']['item-option']['data']['id'],
+            str(item_option),
+        )
+
     def test_included_order_items_should_return_price(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]

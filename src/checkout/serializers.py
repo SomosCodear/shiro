@@ -100,6 +100,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     included_serializers = {
         'item': ItemSerializer,
+        'options': OrderItemOptionSerializer,
     }
 
     class Meta:
