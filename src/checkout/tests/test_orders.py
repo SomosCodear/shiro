@@ -30,13 +30,29 @@ class OrderCreateTestCase(test.APITestCase):
     def setUp(self):
         self.client.force_login(self.customer.user)
 
+    def build_order_payload(self, items, discount_code=None, **kwargs):
+        order_data = {
+            'order-items': [
+                utils.build_json_api_nested_relation(
+                    'order-item',
+                    {'item': utils.build_json_api_identifier('item', item.id)},
+                )
+                for item in items
+            ],
+            'discount_code': utils.build_json_api_identifier(
+                'discount-code',
+                discount_code.id,
+            ) if discount_code is not None else None,
+            **kwargs,
+        }
+        payload = utils.build_json_api_payload('order', order_data)
+
+        return payload
+
     def test_should_fail_if_not_logged_in(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
         self.client.logout()
 
         # act
@@ -48,10 +64,7 @@ class OrderCreateTestCase(test.APITestCase):
     def test_should_fail_if_no_associated_customer(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
         other_user = user_factories.UserFactory()
         self.client.force_login(other_user)
 
@@ -64,10 +77,7 @@ class OrderCreateTestCase(test.APITestCase):
     def test_should_create_order(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
 
         # act
         response = self.client.post(self.url, payload)
@@ -81,10 +91,7 @@ class OrderCreateTestCase(test.APITestCase):
     def test_should_assign_current_user_customer(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
 
         # act
         response = self.client.post(self.url, payload)
@@ -98,10 +105,7 @@ class OrderCreateTestCase(test.APITestCase):
     def test_should_create_order_items(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
 
         # act
         response = self.client.post(self.url, payload)
@@ -110,9 +114,9 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         order = models.Order.objects.first()
-        self.assertEqual(order.items.count(), 2)
+        self.assertEqual(order.order_items.count(), 2)
         self.assertEqual(
-            [order_item.item for order_item in order.items.all()],
+            [order_item.item for order_item in order.order_items.all()],
             items,
         )
 
@@ -120,11 +124,7 @@ class OrderCreateTestCase(test.APITestCase):
         # arrange
         items = [self.items[0]]
         notes = 'test notes'
-        order_data = {
-            'items': [item.id for item in items],
-            'notes': notes,
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items, notes=notes)
 
         # act
         response = self.client.post(self.url, payload)
@@ -139,11 +139,7 @@ class OrderCreateTestCase(test.APITestCase):
         # arrange
         items = [self.items[0]]
         discount_code = factories.DiscountCodeFactory()
-        order_data = {
-            'items': [item.id for item in items],
-            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items, discount_code=discount_code)
 
         # act
         response = self.client.post(self.url, payload)
@@ -155,7 +151,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(order.discount_code, discount_code)
 
     def test_should_validate_at_least_one_item(self, *args):
-        # arrange
+        # arrangeorder_itemi
         order_data = {}
         payload = utils.build_json_api_payload('order', order_data)
 
@@ -164,31 +160,25 @@ class OrderCreateTestCase(test.APITestCase):
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/items')
+        self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/order-items')
 
     def test_should_validate_at_least_one_pass(self, *args):
         # arrange
         items = [self.items[2]]
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
 
         # act
         response = self.client.post(self.url, payload)
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/items')
+        self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/order-items')
 
     def test_should_return_total(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
         total = sum(item.price for item in items)
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
 
         # act
         response = self.client.post(self.url, payload)
@@ -203,11 +193,7 @@ class OrderCreateTestCase(test.APITestCase):
         total = sum(item.price for item in items)
         discount = money.Money(total.amount / 3, 'ARS')
         discount_code = factories.DiscountCodeFactory(percentage=None, fixed_value=discount)
-        order_data = {
-            'items': [item.id for item in items],
-            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items, discount_code=discount_code)
 
         # act
         response = self.client.post(self.url, payload)
@@ -224,11 +210,7 @@ class OrderCreateTestCase(test.APITestCase):
         items = [self.items[0], self.items[2]]
         total = sum(item.price for item in items)
         discount_code = factories.DiscountCodeFactory()
-        order_data = {
-            'items': [item.id for item in items],
-            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items, discount_code=discount_code)
 
         # act
         response = self.client.post(self.url, payload)
@@ -254,11 +236,7 @@ class OrderCreateTestCase(test.APITestCase):
             items[0].price.amount - discount.amount,
             items[1].price.amount,
         ]
-        order_data = {
-            'items': [item.id for item in items],
-            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items, discount_code=discount_code)
 
         # act
         response = self.client.post(self.url, payload)
@@ -278,11 +256,7 @@ class OrderCreateTestCase(test.APITestCase):
             items[0].price.amount - items[0].price.amount * discount_code.percentage / 100,
             items[1].price.amount,
         ]
-        order_data = {
-            'items': [item.id for item in items],
-            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items, discount_code=discount_code)
 
         # act
         response = self.client.post(self.url, payload)
@@ -291,16 +265,13 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['total'], str(utils.quantize_decimal(sum(item_totals))))
 
-    def test_should_allow_to_include_items(self, *args):
+    def test_should_allow_to_include_order_items(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
 
         # act
-        response = self.client.post(f'{self.url}?include=items', payload)
+        response = self.client.post(f'{self.url}?include=order-items', payload)
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -308,19 +279,16 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertListEqual(
             [int(item['id']) for item in json.loads(response.content)['included']],
-            list(order.items.values_list('id', flat=True)),
+            list(order.order_items.values_list('id', flat=True)),
         )
 
-    def test_included_items_should_return_price(self, *args):
+    def test_included_order_items_should_return_price(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
 
         # act
-        response = self.client.post(f'{self.url}?include=items', payload)
+        response = self.client.post(f'{self.url}?include=order-items', payload)
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -343,14 +311,10 @@ class OrderCreateTestCase(test.APITestCase):
             items[0].price.amount - discount.amount,
             items[1].price.amount,
         ]
-        order_data = {
-            'items': [item.id for item in items],
-            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items, discount_code=discount_code)
 
         # act
-        response = self.client.post(f'{self.url}?include=items', payload)
+        response = self.client.post(f'{self.url}?include=order-items', payload)
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -370,14 +334,10 @@ class OrderCreateTestCase(test.APITestCase):
             items[0].price.amount - items[0].price.amount * discount_code.percentage / 100,
             items[1].price.amount,
         ]
-        order_data = {
-            'items': [item.id for item in items],
-            'discount_code': utils.build_json_api_identifier('discount-code', discount_code.id),
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items, discount_code=discount_code)
 
         # act
-        response = self.client.post(f'{self.url}?include=items', payload)
+        response = self.client.post(f'{self.url}?include=order-items', payload)
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -389,10 +349,7 @@ class OrderCreateTestCase(test.APITestCase):
     def test_should_create_payment(self, generate_order_preference):
         # arrange
         items = [self.items[0], self.items[2]]
-        order_data = {
-            'items': [item.id for item in items],
-        }
-        payload = utils.build_json_api_payload('order', order_data)
+        payload = self.build_order_payload(items)
 
         # act
         response = self.client.post(self.url, payload)

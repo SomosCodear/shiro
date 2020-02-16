@@ -75,13 +75,13 @@ class DiscountCode(models.Model):
         return total
 
     def calculate_order_discounted_total(self, order):
-        total = order.calculate_base_total()
-
         if self.type == self.TYPES.ORDER:
-            total = self.calculate_discounted_total(total)
+            base_total = order.calculate_base_total()
+            total = self.calculate_discounted_total(base_total)
         elif self.type == self.TYPES.ITEM:
             total = sum(
-                self.calculate_order_item_discounted_total(item) for item in order.items.all()
+                self.calculate_order_item_discounted_total(order_item)
+                for order_item in order.order_items.all()
             )
 
         return total
@@ -130,12 +130,13 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     notes = models.TextField(null=True, blank=True)
+    items = models.ManyToManyField('Item', through='OrderItem', related_name='orders')
 
     def __str__(self):
         return f'Orden {self.id} ({self.customer})'
 
     def calculate_base_total(self):
-        return sum(item.price for item in self.items.all())
+        return sum(order_item.calculate_base_total() for order_item in self.order_items.all())
 
     def calculate_total(self):
         if self.discount_code is None:
@@ -147,7 +148,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='items')
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='order_items')
     item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='order_items')
     price = money_fields.MoneyField(max_digits=7, decimal_places=2, default_currency='ARS')
     amount = models.PositiveIntegerField(default=1)
@@ -155,6 +156,12 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f'{self.amount} {self.item} ({self.price})'
+
+    def save(self, *args, **kwargs):
+        if self.id is None:
+            self.price = self.item.price if self.item is not None else None
+
+        super().save(*args, **kwargs)
 
     def calculate_base_total(self):
         return self.price * self.amount

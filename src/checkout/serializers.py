@@ -1,9 +1,50 @@
+import json
 from django.contrib import auth
 from django.utils.translation import gettext_lazy as _
-from rest_framework_json_api import serializers
+from rest_framework_json_api import serializers, relations
 from djmoney.contrib import django_rest_framework as djmoney_serializers
 
 from . import models
+
+
+class WritableResourceRelatedField(relations.ResourceRelatedField):
+    def __init__(self, **kwargs):
+        self.write_serializer = kwargs.pop('write_serializer', None)
+        assert self.write_serializer is not None, (
+            'WritableResourceRelatedField must provide a write_searializer'
+        )
+
+        super().__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except ValueError:
+                # show a useful error if they send a `pk` instead of resource object
+                self.fail('incorrect_type', data_type=type(data).__name__)
+        if not isinstance(data, dict):
+            self.fail('incorrect_type', data_type=type(data).__name__)
+
+        expected_relation_type = relations.get_resource_type_from_queryset(self.get_queryset())
+        serializer_resource_type = self.get_resource_type_from_included_serializer()
+
+        if serializer_resource_type is not None:
+            expected_relation_type = serializer_resource_type
+
+        if 'type' not in data:
+            self.fail('missing_type')
+
+        if data['type'] != expected_relation_type:
+            self.conflict(
+                'incorrect_relation_type',
+                relation_type=expected_relation_type,
+                received_type=data['type'],
+            )
+
+        write_representation = self.write_serializer.run_validation(data)
+
+        return write_representation
 
 
 class ItemOptionSerializer(serializers.ModelSerializer):
@@ -44,45 +85,46 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
-    name = serializers.CharField(source='item.name', read_only=True)
-    image = serializers.ImageField(source='item.image', read_only=True)
 
     class Meta:
         model = models.OrderItem
-        fields = ('id', 'item', 'name', 'image', 'price', 'total')
+        fields = ('id', 'item', 'amount', 'price', 'total')
         read_only_fields = ('price',)
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = serializers.PrimaryKeyRelatedField(
-        write_only=True,
-        many=True,
-        queryset=models.Item.objects.all(),
-    )
     total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
+    order_items = WritableResourceRelatedField(
+        write_serializer=OrderItemSerializer(),
+        queryset=models.OrderItem.objects.all(),
+        many=True,
+    )
 
     included_serializers = {
-        'items': OrderItemSerializer,
+        'order_items': OrderItemSerializer,
+        'items': ItemSerializer,
     }
 
     class Meta:
         model = models.Order
-        fields = ('id', 'customer', 'items', 'notes', 'discount_code', 'total')
+        fields = ('id', 'customer', 'order_items', 'notes', 'discount_code', 'total')
         read_only_fields = ('customer',)
 
-    def validate_items(self, items):
-        if len(items) == 0:
+    def validate_order_items(self, order_items):
+        if len(order_items) == 0:
             raise serializers.ValidationError(_('Your order must include at least one item'))
-        elif not any(item.type == models.Item.TYPES.PASS for item in items):
+        elif not any(
+            order_item['item'].type == models.Item.TYPES.PASS for order_item in order_items
+        ):
             raise serializers.ValidationError(_('Any order should include at least one pass'))
 
-        return items
+        return order_items
 
     def create(self, validated_data):
-        items = validated_data.pop('items')
+        order_items = validated_data.pop('order_items')
         order = models.Order.objects.create(**validated_data)
 
-        for item in items:
-            order.items.create(item=item, price=item.price)
+        for order_item in order_items:
+            order.order_items.create(**order_item)
 
         return order

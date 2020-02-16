@@ -17,5 +17,12 @@ def build_json_api_payload(type, data):
     }
 
 
+def build_json_api_nested_relation(type, data):
+    return {
+        'type': type,
+        **data,
+    }
+
+
 def quantize_decimal(value):
     return value.quantize(decimal.Decimal('0.01'))
