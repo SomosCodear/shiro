@@ -277,7 +277,7 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         order = models.Order.objects.first()
-        self.assertListEqual(
+        self.assertEqual(
             [int(item['id']) for item in json.loads(response.content)['included']],
             list(order.order_items.values_list('id', flat=True)),
         )
@@ -309,7 +309,7 @@ class OrderCreateTestCase(test.APITestCase):
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertListEqual(
+        self.assertEqual(
             [item['attributes']['price'] for item in json.loads(response.content)['included']],
             [str(utils.quantize_decimal(item.price.amount)) for item in items],
         )
@@ -335,7 +335,7 @@ class OrderCreateTestCase(test.APITestCase):
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertListEqual(
+        self.assertEqual(
             [item['attributes']['total'] for item in json.loads(response.content)['included']],
             [str(utils.quantize_decimal(total)) for total in item_totals],
         )
@@ -358,7 +358,7 @@ class OrderCreateTestCase(test.APITestCase):
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertListEqual(
+        self.assertEqual(
             [item['attributes']['total'] for item in json.loads(response.content)['included']],
             [str(utils.quantize_decimal(total)) for total in item_totals],
         )
