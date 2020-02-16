@@ -282,6 +282,23 @@ class OrderCreateTestCase(test.APITestCase):
             list(order.order_items.values_list('id', flat=True)),
         )
 
+    def test_should_allow_to_include_items(self, *args):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        payload = self.build_order_payload(items)
+
+        # act
+        response = self.client.post(f'{self.url}?include=items', payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        order = models.Order.objects.first()
+        self.assertEqual(
+            [int(item['id']) for item in json.loads(response.content)['included']],
+            list(order.items.values_list('id', flat=True)),
+        )
+
     def test_included_order_items_should_return_price(self, *args):
         # arrange
         items = [self.items[0], self.items[2]]
