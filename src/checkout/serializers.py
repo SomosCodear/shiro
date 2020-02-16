@@ -83,12 +83,24 @@ class CustomerSerializer(serializers.ModelSerializer):
         return customer
 
 
+class OrderItemOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.OrderItemOption
+        fields = ('id', 'item_option', 'value')
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
     total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
+    options = WritableResourceRelatedField(
+        write_serializer=OrderItemOptionSerializer(),
+        queryset=models.OrderItemOption.objects.none(),
+        many=True,
+        required=False,
+    )
 
     class Meta:
         model = models.OrderItem
-        fields = ('id', 'item', 'amount', 'price', 'total')
+        fields = ('id', 'item', 'amount', 'price', 'options', 'total')
         read_only_fields = ('price',)
 
 
@@ -96,7 +108,7 @@ class OrderSerializer(serializers.ModelSerializer):
     total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
     order_items = WritableResourceRelatedField(
         write_serializer=OrderItemSerializer(),
-        queryset=models.OrderItem.objects.all(),
+        queryset=models.OrderItem.objects.none(),
         many=True,
     )
 
@@ -118,13 +130,27 @@ class OrderSerializer(serializers.ModelSerializer):
         ):
             raise serializers.ValidationError(_('Any order should include at least one pass'))
 
+        for order_item in order_items:
+            item_options = set(order_item['item'].options.values_list('id', flat=True))
+            received_options = set(
+                order_item_option['item_option'].id
+                for order_item_option in order_item.get('options', [])
+            )
+
+            if item_options != received_options:
+                raise serializers.ValidationError(_('You must include all item options'))
+
         return order_items
 
     def create(self, validated_data):
         order_items = validated_data.pop('order_items')
         order = models.Order.objects.create(**validated_data)
 
-        for order_item in order_items:
-            order.order_items.create(**order_item)
+        for order_item_data in order_items:
+            options = order_item_data.pop('options', [])
+            order_item = order.order_items.create(**order_item_data)
+
+            for option_data in options:
+                order_item.options.create(**option_data)
 
         return order

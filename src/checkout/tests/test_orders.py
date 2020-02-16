@@ -1,5 +1,6 @@
 import json
 import faker
+import itertools
 from unittest import mock
 from django import urls
 from rest_framework import test, status
@@ -30,14 +31,19 @@ class OrderCreateTestCase(test.APITestCase):
     def setUp(self):
         self.client.force_login(self.customer.user)
 
-    def build_order_payload(self, items, discount_code=None, **kwargs):
+    def build_order_payload(self, items, items_extra=None, discount_code=None, **kwargs):
+        items_extra = items_extra if items_extra is not None else [{}] * len(items)
+
         order_data = {
             'order-items': [
                 utils.build_json_api_resource(
                     'order-item',
-                    {'item': utils.build_json_api_identifier('item', item.id)},
+                    {
+                        'item': utils.build_json_api_identifier('item', item.id),
+                        **item_extra,
+                    },
                 )
-                for item in items
+                for item, item_extra in itertools.zip_longest(items, items_extra)
             ],
             'discount_code': utils.build_json_api_identifier(
                 'discount-code',
@@ -150,6 +156,33 @@ class OrderCreateTestCase(test.APITestCase):
         order = models.Order.objects.first()
         self.assertEqual(order.discount_code, discount_code)
 
+    def test_should_receive_order_item_options(self, *args):
+        # arrange
+        items = [factories.ItemFactory(
+            type=models.Item.TYPES.PASS,
+            options=[factories.ItemOptionFactory.build()],
+        )]
+        option = {
+            'item_option': utils.build_json_api_identifier(
+                'item-option',
+                items[0].options.first().id,
+            ),
+            'value': 'some value',
+        }
+        options = {'options': [utils.build_json_api_resource('order-item-option', option)]}
+        payload = self.build_order_payload(items, items_extra=[options])
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        order = models.Order.objects.first()
+        order_item_option = order.order_items.first().options.first()
+        self.assertEqual(order_item_option.item_option.id, option['item_option']['id'])
+        self.assertEqual(order_item_option.value, option['value'])
+
     def test_should_validate_at_least_one_item(self, *args):
         # arrangeorder_itemi
         order_data = {}
@@ -165,6 +198,21 @@ class OrderCreateTestCase(test.APITestCase):
     def test_should_validate_at_least_one_pass(self, *args):
         # arrange
         items = [self.items[2]]
+        payload = self.build_order_payload(items)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/order-items')
+
+    def test_should_validate_required_item_options(self, *args):
+        # arrange
+        items = [factories.ItemFactory(
+            type=models.Item.TYPES.PASS,
+            options=[factories.ItemOptionFactory.build()],
+        )]
         payload = self.build_order_payload(items)
 
         # act
