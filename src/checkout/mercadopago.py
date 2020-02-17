@@ -34,7 +34,7 @@ def build_url(path, **kwargs):
     return f'{API_URL}{path}?access_token={settings.MERCADOPAGO_ACCESS_TOKEN}'
 
 
-def generate_order_preference(order):
+def generate_order_preference(order, notification_url=None):
     url = build_url(PREFERENCE_PATH)
     preference = {
         'payer': {
@@ -53,6 +53,7 @@ def generate_order_preference(order):
             } for order_item in order.order_items.all()
         ],
         'external_reference': str(order.id),
+        'notification_url': notification_url,
     }
 
     response = requests.post(url, json=preference)

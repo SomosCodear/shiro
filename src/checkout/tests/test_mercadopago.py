@@ -71,6 +71,17 @@ class GenerateOrderPreferenceTestCase(test.TestCase):
             str(self.order.id),
         )
 
+    def test_should_include_given_notification_url(self):
+        # arrange
+        notification_url = 'http://test.com'
+
+        # act
+        mercadopago.generate_order_preference(self.order, notification_url=notification_url)
+
+        # assert
+        self.assertTrue(self.requests.called)
+        self.assertEqual(self.requests.last_request.json()['notification_url'], notification_url)
+
     def test_should_create_payment(self):
         # act
         mercadopago.generate_order_preference(self.order)
