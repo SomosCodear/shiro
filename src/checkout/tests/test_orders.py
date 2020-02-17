@@ -2,7 +2,7 @@ import json
 import faker
 import itertools
 import requests_mock
-from django import urls, test as django_test
+from django import urls
 from rest_framework import test, status
 from djmoney import money
 
@@ -14,7 +14,7 @@ fake = faker.Faker()
 PREFERENCE_ID = fake.lexify(text='?????????????????')
 
 
-@django_test.override_settings(MERCADOPAGO_ACCESS_TOKEN='xxxx')
+@test.override_settings(MERCADOPAGO_ACCESS_TOKEN='xxxx')
 class OrderCreateTestCase(test.APITestCase):
     @classmethod
     def setUpTestData(cls):
