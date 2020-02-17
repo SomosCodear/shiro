@@ -34,7 +34,7 @@ class PaymentViewSet(views.viewsets.GenericViewSet):
     queryset = models.Payment.objects.none()
     serializer_class = serializers.PaymentSerializer
 
-    @decorators.action(detail=False, methods=['get'])
+    @decorators.action(detail=False, methods=['post'])
     def ipn(self, request, *args, **kwargs):
         serializer = serializers.IPNSerializer(data=request.query_params.dict())
         serializer.is_valid(raise_exception=True)

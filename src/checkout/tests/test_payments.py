@@ -17,15 +17,12 @@ class CustomerCreateTestCase(test.APITestCase):
     def setUp(self):
         self.payment = factories.PaymentFactory()
 
-    def build_notification_payload(self):
-        return {
-            'topic': 'payment',
-            'id': self.payment.external_id,
-        }
+    def build_notification_url(self):
+        return f'{self.url}?topic={mercadopago.IPNTopic.PAYMENT.value}&' \
+            f'id={self.payment.external_id}'
 
     def test_should_mark_payment_as_paid_if_completed(self, requests):
         # arrange
-        notification = self.build_notification_payload()
         payment_payload = {
             'id': self.payment.external_id,
             'status': mercadopago.PaymentStatus.APPROVED.value,
@@ -36,7 +33,7 @@ class CustomerCreateTestCase(test.APITestCase):
         )
 
         # act
-        response = self.client.get(self.url, data=notification)
+        response = self.client.post(self.build_notification_url())
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_200_OK)
