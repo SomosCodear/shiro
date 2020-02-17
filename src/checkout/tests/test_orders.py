@@ -499,6 +499,21 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(payment.status, models.Payment.STATUS.CREATED)
         self.assertEqual(payment.external_id, PREFERENCE_ID)
 
+    def test_should_provide_notification_url(self):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        payload = self.build_order_payload(items)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            self.requests.last_request.json()['notification_url'],
+            f'http://testserver{urls.reverse("payment-ipn")}',
+        )
+
     def test_should_allow_to_include_payment(self):
         # arrange
         items = [self.items[0], self.items[2]]

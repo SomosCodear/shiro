@@ -1,3 +1,4 @@
+from django import urls
 from rest_framework import decorators, response
 from rest_framework_json_api import views
 
@@ -25,7 +26,8 @@ class OrderViewSet(views.viewsets.GenericViewSet,
         customer = self.request.user.customer
         order = serializer.save(customer=customer)
 
-        mercadopago.generate_order_preference(order)
+        notification_url = self.request.build_absolute_uri(urls.reverse('payment-ipn'))
+        mercadopago.generate_order_preference(order, notification_url=notification_url)
 
 
 class PaymentViewSet(views.viewsets.GenericViewSet):
