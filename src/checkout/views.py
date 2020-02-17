@@ -24,5 +24,4 @@ class OrderViewSet(views.viewsets.GenericViewSet,
         customer = self.request.user.customer
         order = serializer.save(customer=customer)
 
-        preference = mercadopago.generate_order_preference(order)
-        order.payments.create(external_id=preference['id'])
+        mercadopago.generate_order_preference(order)
