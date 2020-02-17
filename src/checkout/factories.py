@@ -57,3 +57,22 @@ class DiscountCodeFactory(factory.DjangoModelFactory):
         if extracted:
             for item in extracted:
                 self.items.add(item)
+
+
+class OrderFactory(factory.DjangoModelFactory):
+    customer = factory.SubFactory(CustomerFactory)
+    notes = factory.Faker('paragraph')
+
+    class Meta:
+        model = models.Order
+
+    @factory.post_generation
+    def items(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if not extracted:
+            extracted = [ItemFactory() for i in range(3)]
+
+        for item in extracted:
+            self.items.add(item, through_defaults={'price': item.price})
