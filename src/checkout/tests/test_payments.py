@@ -16,19 +16,21 @@ class CustomerCreateTestCase(test.APITestCase):
 
     def setUp(self):
         self.payment = factories.PaymentFactory()
+        self.payment_external_id = self.fake.numerify('######')
 
     def build_notification_url(self):
-        return f'{self.url}?topic={mercadopago.IPNTopic.PAYMENT.value}&' \
-            f'id={self.payment.external_id}'
+        return f'{self.url}?type={mercadopago.IPNTopic.PAYMENT.value}&' \
+            f'data.id={self.payment_external_id}'
 
     def test_should_mark_payment_as_paid_if_completed(self, requests):
         # arrange
         payment_payload = {
-            'id': self.payment.external_id,
+            'id': self.payment_external_id,
             'status': mercadopago.PaymentStatus.APPROVED.value,
+            'external_reference': str(self.payment.order.id),
         }
         requests.get(
-            mercadopago.build_url(mercadopago.PAYMENT_PATH, id=self.payment.external_id),
+            mercadopago.build_url(mercadopago.PAYMENT_PATH, id=self.payment_external_id),
             json=payment_payload,
         )
 
@@ -41,3 +43,4 @@ class CustomerCreateTestCase(test.APITestCase):
 
         self.payment.refresh_from_db()
         self.assertEqual(self.payment.status, models.Payment.STATUS.APPROVED)
+        self.assertEqual(self.payment.external_id, self.payment_external_id)
