@@ -29,7 +29,7 @@ def generate_order_preference(order):
                 'unit_price': float(order_item.price.amount),
             } for order_item in order.order_items.all()
         ],
-        'external_reference': order.id,
+        'external_reference': str(order.id),
     }
 
     response = requests.post(url, json=preference)
