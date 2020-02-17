@@ -3,8 +3,9 @@ from django.contrib import auth
 from django.utils.translation import gettext_lazy as _
 from rest_framework_json_api import serializers, relations
 from djmoney.contrib import django_rest_framework as djmoney_serializers
+import model_utils
 
-from . import models
+from . import models, mercadopago
 
 
 class WritableResourceRelatedField(relations.ResourceRelatedField):
@@ -170,3 +171,10 @@ class OrderSerializer(serializers.ModelSerializer):
                 order_item.options.create(**option_data)
 
         return order
+
+
+class IPNSerializer(serializers.Serializer):
+    topic = serializers.ChoiceField(
+        choices=model_utils.Choices(*[topic.value for topic in mercadopago.IPNTopic]),
+    )
+    id = serializers.CharField()

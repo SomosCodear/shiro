@@ -1,12 +1,35 @@
+import enum
 import requests
 from django.conf import settings
 
 API_URL = 'https://api.mercadolibre.com'
 PREFERENCE_PATH = '/checkout/preferences'
+PAYMENT_PATH = '/v1/payments/{id}'
 
 
-def build_url(path):
+class IPNTopic(enum.Enum):
+    PAYMENT = 'payment'
+    CHARGEBACK = 'chargebacks'
+    MERCHANT_ORDER = 'merchant_order'
+
+
+class PaymentStatus(enum.Enum):
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    AUTHORIZED = 'authorized'
+    IN_PROCESS = 'in_process'
+    IN_MEDIATION = 'in_mediation'
+    REJECTED = 'rejected'
+    CANCELLED = 'cancelled'
+    REFUNDED = 'refunded'
+    CHARGED_BACK = 'charged_back'
+
+
+def build_url(path, **kwargs):
     assert settings.MERCADOPAGO_ACCESS_TOKEN, 'Access Token for Mercado Pago not set'
+
+    if kwargs:
+        path = path.format(**kwargs)
 
     return f'{API_URL}{path}?access_token={settings.MERCADOPAGO_ACCESS_TOKEN}'
 
@@ -37,3 +60,12 @@ def generate_order_preference(order):
 
     preference = response.json()
     return order.payments.create(external_id=preference['id'])
+
+
+def get_payment(id):
+    url = build_url(PAYMENT_PATH, id=id)
+
+    response = requests.get(url)
+    response.raise_for_status()
+
+    return response.json()
