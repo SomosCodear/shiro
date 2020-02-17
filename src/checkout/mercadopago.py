@@ -2,7 +2,7 @@ import enum
 import requests
 from django.conf import settings
 
-API_URL = 'https://api.mercadolibre.com'
+API_URL = 'https://api.mercadopago.com'
 PREFERENCE_PATH = '/checkout/preferences'
 PAYMENT_PATH = '/v1/payments/{id}'
 
