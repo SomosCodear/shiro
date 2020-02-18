@@ -206,25 +206,6 @@ class Invoice(models.Model):
         return f'Factura {self.number} de {self.order}'
 
 
-class Payment(models.Model):
-    STATUS = choices.Choices(
-        ('CREATED', 'Creado'),
-        ('IN_PROCESS', 'En proceso'),
-        ('REJECTED', 'Rechazado'),
-        ('APPROVED', 'Aprobado'),
-        ('CANCELLED', 'Cancelado'),
-    )
-
-    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='payments')
-    external_id = models.CharField(max_length=100)
-    status = util_fields.StatusField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f'Pago {self.external_id} de {self.order}'
-
-
 class Cancellation(models.Model):
     order = models.OneToOneField('Order', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -255,19 +236,3 @@ class CreditNote(models.Model):
 
     def __str__(self):
         return f'Nota de crédito de {self.cancellation.order}'
-
-
-class Refund(models.Model):
-    STATUS = choices.Choices(
-        ('CREATED', 'Creado'),
-        ('COMPLETED', 'Completado'),
-    )
-
-    cancellation = models.OneToOneField('Cancellation', on_delete=models.CASCADE)
-    external_id = models.CharField(max_length=100)
-    status = util_fields.StatusField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return 'Refund de {self.cancellation.order}'

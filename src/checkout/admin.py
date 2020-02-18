@@ -29,11 +29,6 @@ class OrderItemInline(admin.TabularInline):
     extra = 0
 
 
-class PaymentInline(admin.StackedInline):
-    model = models.Payment
-    extra = 0
-
-
 class InvoiceInline(admin.StackedInline):
     model = models.Invoice
     extra = 0
@@ -42,18 +37,12 @@ class InvoiceInline(admin.StackedInline):
 class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderItemInline,
-        PaymentInline,
         InvoiceInline,
     ]
 
 
 class CancellationItemInline(admin.TabularInline):
     model = models.CancellationItem
-    extra = 0
-
-
-class RefundInline(admin.StackedInline):
-    model = models.Refund
     extra = 0
 
 
@@ -65,7 +54,6 @@ class CreditNoteInline(admin.StackedInline):
 class CancellationAdmin(admin.ModelAdmin):
     inlines = [
         CancellationItemInline,
-        RefundInline,
         CreditNoteInline,
     ]
 
