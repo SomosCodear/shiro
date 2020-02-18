@@ -82,12 +82,11 @@ class GenerateOrderPreferenceTestCase(test.TestCase):
         self.assertTrue(self.requests.called)
         self.assertEqual(self.requests.last_request.json()['notification_url'], notification_url)
 
-    def test_should_create_payment(self):
+    def test_should_update_order(self):
         # act
         mercadopago.generate_order_preference(self.order)
 
         # assert
-        payment = self.order.payments.first()
-        self.assertIsNotNone(payment)
-        self.assertEqual(payment.status, models.Payment.STATUS.CREATED)
-        self.assertEqual(payment.external_id, PREFERENCE_ID)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, models.Order.STATUS.IN_PROCESS)
+        self.assertEqual(self.order.preference_id, PREFERENCE_ID)

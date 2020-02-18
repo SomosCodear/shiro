@@ -76,11 +76,3 @@ class OrderFactory(factory.DjangoModelFactory):
 
         for item in extracted:
             self.items.add(item, through_defaults={'price': item.price})
-
-
-class PaymentFactory(factory.DjangoModelFactory):
-    order = factory.SubFactory(OrderFactory)
-    external_id = factory.Faker('lexify', text='???????????????')
-
-    class Meta:
-        model = models.Payment

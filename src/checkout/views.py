@@ -25,11 +25,11 @@ class OrderViewSet(views.viewsets.GenericViewSet,
         customer = self.request.user.customer
         order = serializer.save(customer=customer)
 
-        notification_url = self.request.build_absolute_uri(urls.reverse('payment-ipn'))
+        notification_url = self.request.build_absolute_uri(urls.reverse('order-ipn'))
         mercadopago.generate_order_preference(order, notification_url=notification_url)
 
 
-class IPNView(django_views.View):
+class OrderIPNView(django_views.View):
     def post(self, request, *args, **kwargs):
         data = request.GET.dict()
 
@@ -44,14 +44,14 @@ class IPNView(django_views.View):
         serializer = serializers.IPNSerializer(data=data)
 
         if serializer.is_valid() and \
-                serializer.validated_data['topic'] == mercadopago.IPNTopic.PAYMENT.value:
-            payment_response = mercadopago.get_payment(serializer.validated_data['id'])
-            payment = models.Payment.objects.get(order__id=payment_response['external_reference'])
+                serializer.validated_data['topic'] == mercadopago.IPNTopic.MERCHANT_ORDER.value:
+            order_response = mercadopago.get_merchant_order(serializer.validated_data['id'])
+            order = models.Order.objects.get(id=order_response['external_reference'])
 
-            if payment.status in [payment.STATUS.CREATED, payment.STATUS.IN_PROCESS] and \
-                    payment_response['status'] == mercadopago.PaymentStatus.APPROVED.value:
-                payment.status = models.Payment.STATUS.APPROVED
-                payment.external_id = payment_response['id']
-                payment.save()
+            if order.status in [models.Order.STATUS.IN_PROCESS] and \
+                    order_response['order_status'] == mercadopago.OrderStatus.PAID.value:
+                order.status = models.Order.STATUS.PAID
+                order.external_id = order_response['id']
+                order.save()
 
         return http.HttpResponse()

@@ -482,7 +482,7 @@ class OrderCreateTestCase(test.APITestCase):
             [str(utils.quantize_decimal(total)) for total in item_totals],
         )
 
-    def test_should_create_payment(self):
+    def test_should_creates_preference_and_sets_in_process_status(self):
         # arrange
         items = [self.items[0], self.items[2]]
         payload = self.build_order_payload(items)
@@ -492,12 +492,11 @@ class OrderCreateTestCase(test.APITestCase):
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(self.requests.called)
 
         order = models.Order.objects.first()
-        payment = order.payments.first()
-        self.assertIsNotNone(payment)
-        self.assertEqual(payment.status, models.Payment.STATUS.CREATED)
-        self.assertEqual(payment.external_id, PREFERENCE_ID)
+        self.assertEqual(order.preference_id, PREFERENCE_ID)
+        self.assertEqual(order.status, models.Order.STATUS.IN_PROCESS)
 
     def test_should_provide_notification_url(self):
         # arrange
@@ -511,22 +510,47 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
             self.requests.last_request.json()['notification_url'],
-            f'http://testserver{urls.reverse("payment-ipn")}',
+            f'http://testserver{urls.reverse("order-ipn")}',
         )
 
-    def test_should_allow_to_include_payment(self):
+
+@requests_mock.Mocker()
+@test.override_settings(MERCADOPAGO_ACCESS_TOKEN='xxxx')
+class OrderIPNTestCase(test.APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.url = urls.reverse('order-ipn')
+
+    def setUp(self):
+        self.order = factories.OrderFactory()
+        self.order_external_id = fake.numerify('######')
+
+    def build_notification_url(self):
+        return f'{self.url}?topic={mercadopago.IPNTopic.MERCHANT_ORDER.value}&' \
+            f'id={self.order_external_id}'
+
+    def test_should_mark_order_as_paid_if_completed(self, requests):
         # arrange
-        items = [self.items[0], self.items[2]]
-        payload = self.build_order_payload(items)
+        self.order.status = models.Order.STATUS.IN_PROCESS
+        self.order.save()
+
+        order_payload = {
+            'id': self.order_external_id,
+            'order_status': mercadopago.OrderStatus.PAID.value,
+            'external_reference': str(self.order.id),
+        }
+        requests.get(
+            mercadopago.build_url(mercadopago.MERCHANT_ORDER_PATH, id=self.order_external_id),
+            json=order_payload,
+        )
 
         # act
-        response = self.client.post(f'{self.url}?include=payments', payload)
+        response = self.client.post(self.build_notification_url())
 
         # assert
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(requests.called)
 
-        order = models.Order.objects.first()
-        payment = order.payments.first()
-        returned_payment = json.loads(response.content)['included'][0]
-        self.assertEqual(returned_payment['type'], 'payment')
-        self.assertEqual(returned_payment['id'], str(payment.id))
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, models.Order.STATUS.PAID)
+        self.assertEqual(self.order.external_id, self.order_external_id)

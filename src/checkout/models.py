@@ -120,6 +120,13 @@ class Customer(models.Model):
 
 
 class Order(models.Model):
+    STATUS = choices.Choices(
+        ('CREATED', 'Creado'),
+        ('IN_PROCESS', 'En proceso'),
+        ('PAID', 'Pagado'),
+        ('CANCELLED', 'Cancelado'),
+    )
+
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='orders')
     discount_code = models.ForeignKey(
         'DiscountCode',
@@ -131,6 +138,9 @@ class Order(models.Model):
     modified_at = models.DateTimeField(auto_now=True)
     notes = models.TextField(null=True, blank=True)
     items = models.ManyToManyField('Item', through='OrderItem', related_name='orders')
+    preference_id = models.CharField(max_length=100, null=True, blank=True)
+    external_id = models.CharField(max_length=100, null=True, blank=True)
+    status = util_fields.StatusField()
 
     def __str__(self):
         return f'Orden {self.id} ({self.customer})'

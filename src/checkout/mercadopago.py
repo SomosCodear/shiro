@@ -2,9 +2,11 @@ import enum
 import requests
 from django.conf import settings
 
+from . import models
+
 API_URL = 'https://api.mercadopago.com'
 PREFERENCE_PATH = '/checkout/preferences'
-PAYMENT_PATH = '/v1/payments/{id}'
+MERCHANT_ORDER_PATH = '/merchant_orders/{id}'
 
 
 class IPNTopic(enum.Enum):
@@ -13,16 +15,13 @@ class IPNTopic(enum.Enum):
     MERCHANT_ORDER = 'merchant_order'
 
 
-class PaymentStatus(enum.Enum):
-    PENDING = 'pending'
-    APPROVED = 'approved'
-    AUTHORIZED = 'authorized'
-    IN_PROCESS = 'in_process'
-    IN_MEDIATION = 'in_mediation'
-    REJECTED = 'rejected'
-    CANCELLED = 'cancelled'
-    REFUNDED = 'refunded'
-    CHARGED_BACK = 'charged_back'
+class OrderStatus(enum.Enum):
+    PAYMENT_REQUIRED = 'payment_required'
+    REVERTED = 'reverted'
+    PAID = 'paid'
+    PARTIALLY_REVERTED = 'partially_reverted'
+    PARTIALLY_PAID = 'partially_paid'
+    PAYMENT_IN_PROCESS = 'payment_in_process'
 
 
 def build_url(path, **kwargs):
@@ -60,11 +59,13 @@ def generate_order_preference(order, notification_url=None):
     response.raise_for_status()
 
     preference = response.json()
-    return order.payments.create(external_id=preference['id'])
+    order.preference_id = preference['id']
+    order.status = models.Order.STATUS.IN_PROCESS
+    order.save()
 
 
-def get_payment(id):
-    url = build_url(PAYMENT_PATH, id=id)
+def get_merchant_order(id):
+    url = build_url(MERCHANT_ORDER_PATH, id=id)
 
     response = requests.get(url)
     response.raise_for_status()

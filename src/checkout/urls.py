@@ -10,5 +10,5 @@ router.register('customers', views.CustomerViewSet)
 router.register('orders', views.OrderViewSet)
 
 urlpatterns = router.urls + [
-    urls.path('payments/ipn/', csrf.csrf_exempt(views.IPNView.as_view()), name='payment-ipn'),
+    urls.path('orders/ipn/', csrf.csrf_exempt(views.OrderIPNView.as_view()), name='order-ipn'),
 ]
