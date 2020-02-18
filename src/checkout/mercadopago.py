@@ -1,11 +1,9 @@
 import enum
-import requests
+import mercadopago
 from django.conf import settings
 
 from . import models
 
-API_URL = 'https://api.mercadopago.com'
-PREFERENCE_PATH = '/checkout/preferences'
 MERCHANT_ORDER_PATH = '/merchant_orders/{id}'
 
 
@@ -24,17 +22,22 @@ class OrderStatus(enum.Enum):
     PAYMENT_IN_PROCESS = 'payment_in_process'
 
 
-def build_url(path, **kwargs):
-    assert settings.MERCADOPAGO_ACCESS_TOKEN, 'Access Token for Mercado Pago not set'
+def get_mp_client():
+    assert settings.MERCADOPAGO_CLIENT_ID, 'Client Id for Mercado Pago not set'
+    assert settings.MERCADOPAGO_CLIENT_SECRET, 'Client Secret for Mercado Pago not set'
 
+    return mercadopago.MP(settings.MERCADOPAGO_CLIENT_ID, settings.MERCADOPAGO_CLIENT_SECRET)
+
+
+def build_path(path, **kwargs):
     if kwargs:
         path = path.format(**kwargs)
 
-    return f'{API_URL}{path}?access_token={settings.MERCADOPAGO_ACCESS_TOKEN}'
+    return path
 
 
 def generate_order_preference(order, notification_url=None):
-    url = build_url(PREFERENCE_PATH)
+    mp = get_mp_client()
     preference = {
         'payer': {
             'name': order.customer.user.first_name,
@@ -55,19 +58,14 @@ def generate_order_preference(order, notification_url=None):
         'notification_url': notification_url,
     }
 
-    response = requests.post(url, json=preference)
-    response.raise_for_status()
-
-    preference = response.json()
-    order.preference_id = preference['id']
+    preference = mp.create_preference(preference)
+    order.preference_id = preference['response']['id']
     order.status = models.Order.STATUS.IN_PROCESS
     order.save()
 
 
 def get_merchant_order(id):
-    url = build_url(MERCHANT_ORDER_PATH, id=id)
+    mp = get_mp_client()
+    url = build_path(MERCHANT_ORDER_PATH, id=id)
 
-    response = requests.get(url)
-    response.raise_for_status()
-
-    return response.json()
+    return mp.get(url)['response']

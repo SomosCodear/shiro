@@ -1,7 +1,7 @@
 import json
 import faker
 import itertools
-import requests_mock
+from unittest import mock
 from django import urls
 from rest_framework import test, status
 from djmoney import money
@@ -14,7 +14,7 @@ fake = faker.Faker()
 PREFERENCE_ID = fake.lexify(text='?????????????????')
 
 
-@test.override_settings(MERCADOPAGO_ACCESS_TOKEN='xxxx')
+@test.override_settings(MERCADOPAGO_CLIENT_ID='xxxx', MERCADOPAGO_CLIENT_SECRET='xxxx')
 class OrderCreateTestCase(test.APITestCase):
     @classmethod
     def setUpTestData(cls):
@@ -27,16 +27,14 @@ class OrderCreateTestCase(test.APITestCase):
 
     def setUp(self):
         self.client.force_login(self.customer.user)
-        self.requests = requests_mock.Mocker()
 
-        self.requests.start()
-        self.requests.post(
-            mercadopago.build_url(mercadopago.PREFERENCE_PATH),
-            json={'id': PREFERENCE_ID},
-        )
+        self.mp_patcher = mock.patch('checkout.mercadopago.get_mp_client', spec=True)
+        get_mp_client = self.mp_patcher.start()
+        self.mp = get_mp_client.return_value
+        self.mp.create_preference.return_value = {'response': {'id': PREFERENCE_ID}}
 
     def tearDown(self):
-        self.requests.stop()
+        self.mp_patcher.stop()
 
     def build_order_payload(self, items, items_extra=None, discount_code=None, **kwargs):
         items_extra = items_extra if items_extra is not None else [{}] * len(items)
@@ -492,7 +490,7 @@ class OrderCreateTestCase(test.APITestCase):
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(self.requests.called)
+        self.mp.create_preference.assert_called()
 
         order = models.Order.objects.first()
         self.assertEqual(order.preference_id, PREFERENCE_ID)
@@ -509,12 +507,11 @@ class OrderCreateTestCase(test.APITestCase):
         # assert
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
-            self.requests.last_request.json()['notification_url'],
+            self.mp.create_preference.call_args[0][0]['notification_url'],
             f'http://testserver{urls.reverse("order-ipn")}',
         )
 
 
-@requests_mock.Mocker()
 @test.override_settings(MERCADOPAGO_ACCESS_TOKEN='xxxx')
 class OrderIPNTestCase(test.APITestCase):
     @classmethod
@@ -525,11 +522,19 @@ class OrderIPNTestCase(test.APITestCase):
         self.order = factories.OrderFactory()
         self.order_external_id = fake.numerify('######')
 
+        self.mp_patcher = mock.patch('checkout.mercadopago.get_mp_client', spec=True)
+        get_mp_client = self.mp_patcher.start()
+        self.mp = get_mp_client.return_value
+        self.mp.create_preference.return_value = {'id': PREFERENCE_ID}
+
+    def tearDown(self):
+        self.mp_patcher.stop()
+
     def build_notification_url(self):
         return f'{self.url}?topic={mercadopago.IPNTopic.MERCHANT_ORDER.value}&' \
             f'id={self.order_external_id}'
 
-    def test_should_mark_order_as_paid_if_completed(self, requests):
+    def test_should_mark_order_as_paid_if_completed(self):
         # arrange
         self.order.status = models.Order.STATUS.IN_PROCESS
         self.order.save()
@@ -539,17 +544,15 @@ class OrderIPNTestCase(test.APITestCase):
             'order_status': mercadopago.OrderStatus.PAID.value,
             'external_reference': str(self.order.id),
         }
-        requests.get(
-            mercadopago.build_url(mercadopago.MERCHANT_ORDER_PATH, id=self.order_external_id),
-            json=order_payload,
-        )
+        url = mercadopago.build_path(mercadopago.MERCHANT_ORDER_PATH, id=self.order_external_id)
+        self.mp.get.return_value = {'response': order_payload}
 
         # act
         response = self.client.post(self.build_notification_url())
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(requests.called)
+        self.mp.get.assert_called_with(url)
 
         self.order.refresh_from_db()
         self.assertEqual(self.order.status, models.Order.STATUS.PAID)

@@ -1,5 +1,5 @@
 import faker
-import requests_mock
+from unittest import mock
 from django import test
 
 from .. import models, factories, mercadopago
@@ -8,22 +8,20 @@ fake = faker.Faker()
 PREFERENCE_ID = fake.lexify(text='?????????????????')
 
 
-@test.override_settings(MERCADOPAGO_ACCESS_TOKEN='xxxx')
+@test.override_settings(MERCADOPAGO_CLIENT_ID='xxxx', MERCADOPAGO_CLIENT_SECRET='xxxx')
 class GenerateOrderPreferenceTestCase(test.TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.order = factories.OrderFactory()
 
     def setUp(self):
-        self.requests = requests_mock.Mocker()
-        self.requests.start()
-        self.requests.post(
-            mercadopago.build_url(mercadopago.PREFERENCE_PATH),
-            json={'id': PREFERENCE_ID},
-        )
+        self.mp_patcher = mock.patch('checkout.mercadopago.get_mp_client', spec=True)
+        get_mp_client = self.mp_patcher.start()
+        self.mp = get_mp_client.return_value
+        self.mp.create_preference.return_value = {'response': {'id': PREFERENCE_ID}}
 
     def tearDown(self):
-        self.requests.stop()
+        self.mp_patcher.stop()
 
     def test_should_include_customer_information(self):
         # arrange
@@ -37,8 +35,8 @@ class GenerateOrderPreferenceTestCase(test.TestCase):
         mercadopago.generate_order_preference(self.order)
 
         # assert
-        self.assertTrue(self.requests.called)
-        self.assertEqual(self.requests.last_request.json()['payer'], expected_payer)
+        self.mp.create_preference.assert_called()
+        self.assertEqual(self.mp.create_preference.call_args[0][0]['payer'], expected_payer)
 
     def test_should_include_items_information(self):
         # arrange
@@ -57,17 +55,17 @@ class GenerateOrderPreferenceTestCase(test.TestCase):
         mercadopago.generate_order_preference(self.order)
 
         # assert
-        self.assertTrue(self.requests.called)
-        self.assertEqual(self.requests.last_request.json()['items'], expected_items)
+        self.mp.create_preference.assert_called()
+        self.assertEqual(self.mp.create_preference.call_args[0][0]['items'], expected_items)
 
     def test_should_include_order_as_external_reference(self):
         # act
         mercadopago.generate_order_preference(self.order)
 
         # assert
-        self.assertTrue(self.requests.called)
+        self.mp.create_preference.assert_called()
         self.assertEqual(
-            self.requests.last_request.json()['external_reference'],
+            self.mp.create_preference.call_args[0][0]['external_reference'],
             str(self.order.id),
         )
 
@@ -79,8 +77,11 @@ class GenerateOrderPreferenceTestCase(test.TestCase):
         mercadopago.generate_order_preference(self.order, notification_url=notification_url)
 
         # assert
-        self.assertTrue(self.requests.called)
-        self.assertEqual(self.requests.last_request.json()['notification_url'], notification_url)
+        self.mp.create_preference.assert_called()
+        self.assertEqual(
+            self.mp.create_preference.call_args[0][0]['notification_url'],
+            notification_url,
+        )
 
     def test_should_update_order(self):
         # act
