@@ -205,6 +205,7 @@ class OrderItemOption(models.Model):
 class Invoice(models.Model):
     order = models.OneToOneField('Order', on_delete=models.CASCADE)
     number = models.PositiveIntegerField()
+    cae = models.CharField(max_length=100)
     file = models.FileField(upload_to='documents/invoices/')
 
     def __str__(self):
