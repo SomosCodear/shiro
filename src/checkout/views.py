@@ -1,7 +1,7 @@
 from django import urls, http, views as django_views
 from rest_framework_json_api import views
 
-from . import models, serializers, permissions, mercadopago
+from . import models, serializers, permissions, mercadopago, afip
 
 
 class ItemViewSet(views.ReadOnlyModelViewSet):
@@ -53,5 +53,8 @@ class OrderIPNView(django_views.View):
                 order.status = models.Order.STATUS.PAID
                 order.external_id = order_response['id']
                 order.save()
+
+                invoice_number, invoice_cae = afip.generate_cae(order)
+                models.Invoice.objects.create(order=order, number=invoice_number, cae=invoice_cae)
 
         return http.HttpResponse()

@@ -519,15 +519,22 @@ class OrderIPNTestCase(test.APITestCase):
         cls.url = urls.reverse('order-ipn')
 
     def setUp(self):
-        self.order = factories.OrderFactory()
+        self.order = factories.OrderFactory(status=models.Order.STATUS.IN_PROCESS)
         self.order_external_id = fake.numerify('######')
+        self.invoice_number = 5
+        self.invoice_cae = '1234'
 
         self.mp_patcher = mock.patch('checkout.mercadopago.get_mp_client', spec=True)
         get_mp_client = self.mp_patcher.start()
         self.mp = get_mp_client.return_value
         self.mp.create_preference.return_value = {'id': PREFERENCE_ID}
 
+        self.afip_patcher = mock.patch('checkout.views.afip', spec=True)
+        self.afip = self.afip_patcher.start()
+        self.afip.generate_cae.return_value = (self.invoice_number, self.invoice_cae)
+
     def tearDown(self):
+        self.afip_patcher.stop()
         self.mp_patcher.stop()
 
     def build_notification_url(self):
@@ -536,9 +543,6 @@ class OrderIPNTestCase(test.APITestCase):
 
     def test_should_mark_order_as_paid_if_completed(self):
         # arrange
-        self.order.status = models.Order.STATUS.IN_PROCESS
-        self.order.save()
-
         order_payload = {
             'id': self.order_external_id,
             'order_status': mercadopago.OrderStatus.PAID.value,
@@ -557,3 +561,24 @@ class OrderIPNTestCase(test.APITestCase):
         self.order.refresh_from_db()
         self.assertEqual(self.order.status, models.Order.STATUS.PAID)
         self.assertEqual(self.order.external_id, self.order_external_id)
+
+    def test_should_generate_invoice_if_completed(self):
+        # arrange
+        order_payload = {
+            'id': self.order_external_id,
+            'order_status': mercadopago.OrderStatus.PAID.value,
+            'external_reference': str(self.order.id),
+        }
+        self.mp.get.return_value = {'response': order_payload}
+
+        # act
+        response = self.client.post(self.build_notification_url())
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.afip.generate_cae.assert_called_once_with(self.order)
+
+        self.order.refresh_from_db()
+        self.assertIsNotNone(self.order.invoice)
+        self.assertEqual(self.order.invoice.number, self.invoice_number)
+        self.assertEqual(self.order.invoice.cae, self.invoice_cae)
