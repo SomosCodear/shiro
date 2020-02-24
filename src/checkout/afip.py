@@ -2,13 +2,11 @@ from py3afipws import wsaa, wsfev1
 from django.conf import settings
 from django.utils import timezone
 
-from . import models
-
 INVOICE_TYPE = 11
 INVOICE_POINT_OF_SALE = 1
 INVOICE_CONCEPT = 3
+INVOICE_CUIT_DOCUMENT_TYPE = 80
 INVOICE_NATIONAL_DOCUMENT_TYPE = 96
-INVOICE_PASSPORT_DOCUMENT_TYPE = 94
 INVOICE_SERVICE_DATE_START = '20200529'
 INVOICE_SERVICE_DATE_END = '20200530'
 
@@ -38,10 +36,11 @@ def get_client():
 
 def generate_cae(order):
     client = get_client()
+    customer = order.customer
 
+    identity_document = customer.identity_document
     document_type = INVOICE_NATIONAL_DOCUMENT_TYPE \
-        if order.customer.identity_document_type == models.Customer.IDENTITY_DOCUMENT_TYPES.DNI \
-        else INVOICE_PASSPORT_DOCUMENT_TYPE
+        if customer.is_identity_document_cuit else INVOICE_CUIT_DOCUMENT_TYPE
     invoice_number = int(client.CompUltimoAutorizado(INVOICE_TYPE, INVOICE_POINT_OF_SALE)) + 1
     invoice_total = order.calculate_total()
     invoice_date = timezone.now().strftime('%Y%m%d')
@@ -49,7 +48,7 @@ def generate_cae(order):
     client.CrearFactura(
         concepto=INVOICE_CONCEPT,
         tipo_doc=document_type,
-        nro_doc=order.customer.identity_document,
+        nro_doc=identity_document,
         tipo_cbte=INVOICE_TYPE,
         punto_vta=INVOICE_POINT_OF_SALE,
         cbt_desde=invoice_number,

@@ -108,21 +108,20 @@ class DiscountCodeRestriction(models.Model):
 
 
 class Customer(models.Model):
-    IDENTITY_DOCUMENT_TYPES = choices.Choices(
-        ('DNI', 'DNI'),
-        ('PSP', 'Pasaporte'),
-    )
+    CUIT_LENGTH = 11
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
     )
-    identity_document_type = models.CharField(max_length=3, choices=IDENTITY_DOCUMENT_TYPES)
     identity_document = models.CharField(max_length=50)
     company = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
         return str(self.user)
+
+    def is_identity_document_cuit(self):
+        return len(self.identity_document) == self.CUIT_LENGTH
 
 
 class Order(models.Model):
