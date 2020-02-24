@@ -6,25 +6,26 @@ verify_ssl = true
 [dev-packages]
 flake8 = "~=3.7.9"
 flake8-commas = "~=2.0.0"
+freezegun = "==0.3.14"
+factory-boy = "~=2.12"
 
 [packages]
-django = "~=3.0.3"
-zappa = "~=0.48.2"
-psycopg2-binary = "~=2.8.4"
-djangorestframework = "~=3.11.0"
-djangorestframework-jsonapi = {extras = ["django-filter"],version = "~=3.0.0"}
+django = "~=3.0"
+zappa = "~=0.48"
+psycopg2-binary = "~=2.8"
+djangorestframework = "~=3.11"
+djangorestframework-jsonapi = {extras = ["django-filter"],version = "~=3.0"}
 django-debug-toolbar = "~=2.2"
-django-model-utils = "~=4.0.0"
+django-model-utils = "~=4.0"
 django-money = "~=1.0"
-factory-boy = "~=2.12.0"
-requests = "~=2.22.0"
-pillow = "~=7.0.0"
-uritemplate = "~=3.0.1"
-mercadopago = "~=1.1.1"
-py3afipws = "~=0.10.12"
-httplib2 = "~=0.17.0"
+requests = "~=2.22"
+pillow = "~=7.0"
+uritemplate = "~=3.0"
+mercadopago = "~=1.1"
+py3afipws = "~=0.10"
+httplib2 = "~=0.17"
 py3simplesoap = "~=0.1"
-pyopenssl = "~=19.1.0"
+pyopenssl = "~=19.1"
 
 [requires]
 python_version = "3.7"
