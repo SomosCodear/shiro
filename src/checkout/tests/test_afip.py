@@ -22,7 +22,6 @@ class AfipGenerateCAETestCase(test.TestCase):
         afip_client = mock.MagicMock()
         afip_client.CompUltimoAutorizado.return_value = invoice_number - 1
         afip_client.CAE = 1234
-        afip_client.Vencimiento = '20200230'
         get_client.return_value = afip_client
 
         expected_invoice = {
@@ -42,10 +41,10 @@ class AfipGenerateCAETestCase(test.TestCase):
         }
 
         # act
-        cae, expiration = afip.generate_cae(self.order)
+        number, cae = afip.generate_cae(self.order)
 
         # assert
         afip_client.CrearFactura.assert_called_once_with(**expected_invoice)
         afip_client.CAESolicitar.assert_called_once()
+        self.assertEqual(number, invoice_number)
         self.assertEqual(cae, afip_client.CAE)
-        self.assertEqual(expiration, afip_client.Vencimiento)

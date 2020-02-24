@@ -62,4 +62,4 @@ def generate_cae(order):
     )
     client.CAESolicitar()
 
-    return client.CAE, client.Vencimiento
+    return invoice_number, client.CAE
