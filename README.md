@@ -28,6 +28,10 @@ For the initial setup, follow these steps:
   ```
     pipenv run src/manage.py migrate
   ```
+- Create cache table
+  ```
+    pipenv run src/manage.py createcachetable
+  ```
 - Create yourself a superuser
   ```
     pipenv run src/manage.py createsuperuser

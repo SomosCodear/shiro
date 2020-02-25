@@ -97,6 +97,17 @@ DATABASES = {
 }
 
 
+# Cache
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    },
+    'afip': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'afip_cache_table',
+    },
+}
+
 # Auth
 
 AUTH_USER_MODEL = 'user.User'

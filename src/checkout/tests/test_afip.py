@@ -1,9 +1,88 @@
+import faker
 import freezegun
 from unittest import mock
 from django import test
 from django.utils import timezone
+from django.core.cache import caches
 
 from .. import factories, afip
+
+fake = faker.Faker()
+
+
+@mock.patch('checkout.afip.wsfev1')
+@mock.patch('checkout.afip.wsaa')
+@test.override_settings(
+    AFIP_CERTIFICATE='CERTIFICATE',
+    AFIP_PRIVATE_KEY='PRIVATE_KEY',
+    AFIP_CUIT='12345',
+)
+class AfipGetClientTestCase(test.TestCase):
+    def test_should_store_token_and_sign_in_cache(self, wsaa, wsfev1):
+        # arrange
+        token = fake.lexify(text='?????????')
+        sign = fake.lexify(text='?????????')
+        expiration = fake.date_time_between(start_date='now').strftime(afip.EXPIRATION_DATE_FORMAT)
+        wsaa.WSAA.return_value.Token = token
+        wsaa.WSAA.return_value.Sign = sign
+        wsaa.WSAA.return_value.ObtenerTagXml.return_value = expiration
+
+        # act
+        afip.get_client()
+
+        # assert
+        self.assertEqual(caches['afip'].get(afip.TOKEN_CACHE_KEY), token)
+        self.assertEqual(caches['afip'].get(afip.SIGN_CACHE_KEY), sign)
+        self.assertEqual(caches['afip'].get(afip.EXPIRATION_CACHE_KEY), expiration)
+
+    def test_should_use_stored_token_and_sign_from_cache(self, wsaa, wsfev1):
+        # arrange
+        token = fake.lexify(text='?????????')
+        sign = fake.lexify(text='?????????')
+        expiration = fake.date_time_between(
+            start_date=timezone.now() + timezone.timedelta(hours=1),
+            end_date=timezone.now() + timezone.timedelta(days=1),
+        ).strftime(afip.EXPIRATION_DATE_FORMAT)
+        caches['afip'].set(afip.TOKEN_CACHE_KEY, token)
+        caches['afip'].set(afip.SIGN_CACHE_KEY, sign)
+        caches['afip'].set(afip.EXPIRATION_CACHE_KEY, expiration)
+
+        # act
+        client = afip.get_client()
+
+        # assert
+        self.assertEqual(client.Token, token.encode('utf-8'))
+        self.assertEqual(client.Sign, sign.encode('utf-8'))
+
+    def test_should_not_use_stored_token_and_sign_if_expired(self, wsaa, wsfev1):
+        # arrange
+        old_token = fake.lexify(text='?????????')
+        old_sign = fake.lexify(text='?????????')
+        old_expiration = fake.date_time_between(
+            end_date='now',
+        ).strftime(afip.EXPIRATION_DATE_FORMAT)
+        caches['afip'].set(afip.TOKEN_CACHE_KEY, old_token)
+        caches['afip'].set(afip.SIGN_CACHE_KEY, old_sign)
+        caches['afip'].set(afip.EXPIRATION_CACHE_KEY, old_expiration)
+
+        new_token = fake.lexify(text='?????????')
+        new_sign = fake.lexify(text='?????????')
+        new_expiration = fake.date_time_between(
+            start_date='now',
+        ).strftime(afip.EXPIRATION_DATE_FORMAT)
+        wsaa.WSAA.return_value.Token = new_token
+        wsaa.WSAA.return_value.Sign = new_sign
+        wsaa.WSAA.return_value.ObtenerTagXml.return_value = new_expiration
+
+        # act
+        client = afip.get_client()
+
+        # assert
+        self.assertEqual(client.Token, new_token.encode('utf-8'))
+        self.assertEqual(client.Sign, new_sign.encode('utf-8'))
+        self.assertEqual(caches['afip'].get(afip.TOKEN_CACHE_KEY), new_token)
+        self.assertEqual(caches['afip'].get(afip.SIGN_CACHE_KEY), new_sign)
+        self.assertEqual(caches['afip'].get(afip.EXPIRATION_CACHE_KEY), new_expiration)
 
 
 @mock.patch('checkout.afip.get_client')
