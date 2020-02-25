@@ -11,6 +11,7 @@ pids
 # django
 media
 *__pycache__
+src/shiro/settings/local.py
 
 # env
 .env
