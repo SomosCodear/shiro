@@ -1,0 +1,19 @@
+{% block subject %}¡Gracias por tu compra!{% endblock %}
+
+{% block plain %}
+  Hola {{order.customer.user.get_full_name}}!
+
+  Muchas gracias por sumarte a la WebConf 2020, te esperamos en el evento!
+  {{order.invoice.cae}}
+{% endblock %}
+
+{% block html %}
+  <h1>Hola {{order.customer.user.get_full_name}}!</h1>
+
+  <p>
+    Muchas gracias por sumarte a la WebConf 2020, te esperamos en el evento!
+  </p>
+  <br/>
+
+  <b>{{order.invoice.cae}}</b>
+{% endblock %}

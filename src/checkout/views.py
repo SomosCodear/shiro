@@ -1,3 +1,4 @@
+import templated_email
 from django import urls, http, views as django_views
 from rest_framework_json_api import views
 
@@ -56,5 +57,14 @@ class OrderIPNView(django_views.View):
 
                 invoice_number, invoice_cae = afip.generate_cae(order)
                 models.Invoice.objects.create(order=order, number=invoice_number, cae=invoice_cae)
+
+                templated_email.send_templated_mail(
+                    template_name='order_paid',
+                    from_email='no-reply@webconf.tech',
+                    recipient_list=[order.customer.user.email],
+                    context={
+                        'order': order,
+                    },
+                )
 
         return http.HttpResponse()

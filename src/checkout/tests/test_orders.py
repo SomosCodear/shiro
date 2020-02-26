@@ -3,6 +3,7 @@ import faker
 import itertools
 from unittest import mock
 from django import urls
+from django.core import mail
 from rest_framework import test, status
 from djmoney import money
 
@@ -582,3 +583,20 @@ class OrderIPNTestCase(test.APITestCase):
         self.assertIsNotNone(self.order.invoice)
         self.assertEqual(self.order.invoice.number, self.invoice_number)
         self.assertEqual(self.order.invoice.cae, self.invoice_cae)
+
+    def test_should_send_email_to_customer_if_completed(self):
+        # arrange
+        order_payload = {
+            'id': self.order_external_id,
+            'order_status': mercadopago.OrderStatus.PAID.value,
+            'external_reference': str(self.order.id),
+        }
+        self.mp.get.return_value = {'response': order_payload}
+
+        # act
+        self.client.post(self.build_notification_url())
+
+        # assert
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].recipients(), [self.order.customer.user.email])
+        self.assertEqual(mail.outbox[0].subject, '¡Gracias por tu compra!')
