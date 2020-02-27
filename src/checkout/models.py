@@ -2,9 +2,9 @@ from django.conf import settings
 from django.db import models
 from django.contrib.postgres import fields as postgres_fields
 from django.core import validators
-from model_utils import choices, fields as util_fields
+from model_utils import choices, fields as util_fields, tracker
 from djmoney.models import fields as money_fields
-from . import validators as custom_validators
+from . import validators as custom_validators, signals
 
 
 class Item(models.Model):
@@ -147,8 +147,19 @@ class Order(models.Model):
     external_id = models.CharField(max_length=100, null=True, blank=True)
     status = util_fields.StatusField()
 
+    status_tracker = tracker.FieldTracker(fields=['status'])
+
     def __str__(self):
         return f'Orden {self.id} ({self.customer})'
+
+    def save(self, *args, **kwargs):
+        order_paid = self.status_tracker.previous('status') != self.STATUS.PAID and \
+            self.status == self.STATUS.PAID
+
+        super().save(*args, **kwargs)
+
+        if order_paid:
+            signals.order_paid.send(sender=self.__class__, order=self)
 
     def calculate_base_total(self):
         return sum(order_item.calculate_base_total() for order_item in self.order_items.all())

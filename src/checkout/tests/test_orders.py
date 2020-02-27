@@ -600,3 +600,19 @@ class OrderIPNTestCase(test.APITestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].recipients(), [self.order.customer.user.email])
         self.assertEqual(mail.outbox[0].subject, '¡Gracias por tu compra!')
+
+    @mock.patch('checkout.models.signals.order_paid')
+    def test_should_fire_an_order_paid_signal(self, order_paid):
+        # arrange
+        order_payload = {
+            'id': self.order_external_id,
+            'order_status': mercadopago.OrderStatus.PAID.value,
+            'external_reference': str(self.order.id),
+        }
+        self.mp.get.return_value = {'response': order_payload}
+
+        # act
+        self.client.post(self.build_notification_url())
+
+        # assert
+        order_paid.send.assert_called_once_with(sender=models.Order, order=self.order)
