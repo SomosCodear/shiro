@@ -75,4 +75,13 @@ class OrderFactory(factory.DjangoModelFactory):
             extracted = [ItemFactory() for i in range(3)]
 
         for item in extracted:
-            self.items.add(item, through_defaults={'price': item.price})
+            OrderItemFactory(order=self, item=item)
+
+
+class OrderItemFactory(factory.DjangoModelFactory):
+    order = factory.SubFactory(OrderFactory)
+    item = factory.SubFactory(ItemFactory)
+    price = factory.SelfAttribute('item.price')
+
+    class Meta:
+        model = models.OrderItem

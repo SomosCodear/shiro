@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'djmoney',
     'user',
     'checkout',
+    'webconf',
 ]
 
 MIDDLEWARE = [

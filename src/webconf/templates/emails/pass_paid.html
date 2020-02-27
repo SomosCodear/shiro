@@ -1,0 +1,16 @@
+{% block subject %}¡Tenemos tu entrada!{% endblock %}
+
+{% block plain %}
+  Hola {{email}}!
+
+  Muchas gracias por sumarte a la WebConf 2020, te esperamos en el evento!
+{% endblock %}
+
+{% block html %}
+  <h1>Hola {{email}}!</h1>
+
+  <p>
+    Muchas gracias por sumarte a la WebConf 2020, te esperamos en el evento!
+  </p>
+  <br/>
+{% endblock %}
