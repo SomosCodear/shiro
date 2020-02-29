@@ -6,4 +6,3 @@ class WebconfConfig(AppConfig):
 
     def ready(self):
         from . import signals  # noqa: F401
-        print(signals)
