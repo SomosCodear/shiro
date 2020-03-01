@@ -179,3 +179,9 @@ class IPNSerializer(serializers.Serializer):
         choices=model_utils.Choices(*[topic.value for topic in mercadopago.IPNTopic]),
     )
     id = serializers.CharField()
+
+
+class DiscountCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.DiscountCode
+        fields = ('id', 'code', 'items', 'type', 'percentage', 'fixed_value')

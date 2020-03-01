@@ -1,8 +1,9 @@
 import templated_email
 from django import urls, http, views as django_views
+from rest_framework import response
 from rest_framework_json_api import views
 
-from . import models, serializers, permissions, mercadopago, afip
+from . import models, serializers, permissions, mercadopago, afip, filters
 
 
 class ItemViewSet(views.ReadOnlyModelViewSet):
@@ -68,3 +69,9 @@ class OrderIPNView(django_views.View):
                 )
 
         return http.HttpResponse()
+
+
+class DiscountViewSet(views.viewsets.GenericViewSet, views.viewsets.mixins.ListModelMixin):
+    queryset = models.DiscountCode.objects.order_by('id')
+    serializer_class = serializers.DiscountCodeSerializer
+    filterset_class = filters.DiscountCodeFilterSet
