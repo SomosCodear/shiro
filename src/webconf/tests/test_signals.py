@@ -4,6 +4,7 @@ from django import test
 from django.core import mail
 
 from checkout import factories, models
+from .. import signals
 
 fake = faker.Faker()
 
@@ -31,7 +32,7 @@ class SendPassEmailsTestCase(test.TestCase):
         self.order.status = models.Order.STATUS.PAID
 
         # act
-        self.order.save()
+        signals.send_pass_emails(None, self.order)
 
         # assert
         passes = self.order.order_items.filter(item__type=models.Item.TYPES.PASS)
