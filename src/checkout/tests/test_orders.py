@@ -417,6 +417,47 @@ class OrderCreateTestCase(test.APITestCase):
         self.assertEqual(len(included_options), 1)
         self.assertEqual(included_options[0]['id'], str(item_option))
 
+    def test_should_fail_if_email_item_option_value_is_not_email(self):
+        # arrange
+        items = [factories.ItemFactory(
+            type=models.Item.TYPES.PASS,
+            options=[factories.ItemOptionFactory.build(type=models.ItemOption.TYPES.EMAIL)],
+        )]
+        item_option = items[0].options.first().id
+        option = {
+            'item_option': utils.build_json_api_identifier('item-option', item_option),
+            'value': 'invalid email value',
+        }
+        options = {'options': [utils.build_json_api_resource('order-item-option', option)]}
+        payload = self.build_order_payload(items, items_extra=[options])
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('value', response.data[0]['options'].keys())
+
+    def test_should_not_fail_if_email_item_option_value_is_email(self):
+        # arrange
+        items = [factories.ItemFactory(
+            type=models.Item.TYPES.PASS,
+            options=[factories.ItemOptionFactory.build(type=models.ItemOption.TYPES.EMAIL)],
+        )]
+        item_option = items[0].options.first().id
+        option = {
+            'item_option': utils.build_json_api_identifier('item-option', item_option),
+            'value': fake.email(),
+        }
+        options = {'options': [utils.build_json_api_resource('order-item-option', option)]}
+        payload = self.build_order_payload(items, items_extra=[options])
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
     def test_included_order_items_should_return_price(self):
         # arrange
         items = [self.items[0], self.items[2]]

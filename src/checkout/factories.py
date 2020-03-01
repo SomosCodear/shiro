@@ -26,7 +26,7 @@ class ItemFactory(factory.DjangoModelFactory):
 
 class ItemOptionFactory(factory.DjangoModelFactory):
     name = factory.Faker('word')
-    type = factory.Faker('random_element', elements=[type[0] for type in models.ItemOption.TYPES])
+    type = models.ItemOption.TYPES.TEXT
 
     class Meta:
         model = models.ItemOption

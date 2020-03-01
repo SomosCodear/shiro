@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.core import validators
 from django.contrib.postgres import fields as postgres_fields
 from django.core import validators
 from model_utils import choices, fields as util_fields, tracker
@@ -211,6 +212,12 @@ class OrderItemOption(models.Model):
 
     def __str__(self):
         return f'{self.item_option}: {self.value}'
+
+    def clean(self):
+        if self.item_option.type == ItemOption.TYPES.EMAIL:
+            validators.EmailValidator({
+                'value': 'Debe ingresar un email válido',
+            })(self.value)
 
 
 class Invoice(models.Model):

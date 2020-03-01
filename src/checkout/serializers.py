@@ -1,4 +1,5 @@
 import json
+from django.core import validators as django_validators
 from django.contrib import auth
 from django.utils.translation import gettext_lazy as _
 from rest_framework_json_api import serializers, relations
@@ -92,6 +93,14 @@ class OrderItemOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.OrderItemOption
         fields = ('id', 'item_option', 'value')
+
+    def validate(self, data):
+        try:
+            models.OrderItemOption(**data).clean()
+        except django_validators.ValidationError as validation_error:
+            raise serializers.ValidationError(validation_error.message_dict)
+
+        return data
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
