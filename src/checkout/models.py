@@ -2,9 +2,10 @@ from django.conf import settings
 from django.db import models
 from django.core import validators
 from django.contrib.postgres import fields as postgres_fields
-from django.core import validators
 from model_utils import choices, fields as util_fields, tracker
 from djmoney.models import fields as money_fields
+from djmoney import money
+
 from . import validators as custom_validators, signals
 
 
@@ -59,13 +60,18 @@ class DiscountCode(models.Model):
     def __str__(self):
         return f'{self.code} ({self.description})'
 
-    def calculate_discounted_total(self, total):
-        if self.fixed_value is not None:
-            total -= self.fixed_value
-        elif self.percentage is not None:
-            total -= total * self.percentage / 100
+    def calculate_discount(self, value):
+        discount = money.Money(0, 'ARS')
 
-        return total
+        if self.fixed_value is not None:
+            discount = self.fixed_value
+        elif self.percentage is not None:
+            discount = value * self.percentage / 100
+
+        return discount
+
+    def calculate_discounted_total(self, total):
+        return total - self.calculate_discount(total)
 
     def calculate_order_item_discounted_total(self, order_item):
         total = order_item.calculate_base_total()
