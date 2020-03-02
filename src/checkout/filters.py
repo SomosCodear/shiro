@@ -3,6 +3,12 @@ from django import forms
 from . import models
 
 
+class ItemFilterSet(django_filters.FilterSet):
+    class Meta:
+        model = models.Item
+        fields = ('type',)
+
+
 class DiscountCodeFilterSetForm(forms.Form):
     def clean_code(self):
         code = self.cleaned_data['code']
@@ -11,6 +17,7 @@ class DiscountCodeFilterSetForm(forms.Form):
             raise forms.ValidationError('The \'code\' filter must be present')
 
         return code
+
 
 class DiscountCodeFilterSet(django_filters.FilterSet):
     class Meta:

@@ -1,6 +1,5 @@
 import templated_email
 from django import urls, http, views as django_views
-from rest_framework import response
 from rest_framework_json_api import views
 
 from . import models, serializers, permissions, mercadopago, afip, filters
@@ -9,6 +8,7 @@ from . import models, serializers, permissions, mercadopago, afip, filters
 class ItemViewSet(views.ReadOnlyModelViewSet):
     queryset = models.Item.objects.order_by('id')
     serializer_class = serializers.ItemSerializer
+    filterset_class = filters.ItemFilterSet
 
 
 class CustomerViewSet(views.viewsets.GenericViewSet,
