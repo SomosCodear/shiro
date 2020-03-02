@@ -27,6 +27,7 @@ httplib2 = "~=0.17"
 py3simplesoap = "~=0.1"
 pyopenssl = "~=19.1"
 django-templated-email = "~=2.3"
+django-cors-headers = "~=3.2"
 
 [requires]
 python_version = "3.7"
