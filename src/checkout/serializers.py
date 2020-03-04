@@ -68,11 +68,10 @@ class ItemSerializer(serializers.ModelSerializer):
 class CustomerSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email')
     first_name = serializers.CharField(source='user.first_name')
-    last_name = serializers.CharField(source='user.last_name')
 
     class Meta:
         model = models.Customer
-        fields = ('id', 'email', 'first_name', 'last_name', 'identity_document', 'company')
+        fields = ('id', 'email', 'first_name', 'identity_document', 'company')
 
     def create(self, validated_data):
         User = auth.get_user_model()

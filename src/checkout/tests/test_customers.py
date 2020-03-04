@@ -18,7 +18,6 @@ class CustomerCreateTestCase(test.APITestCase):
         customer_data = {
             'email': self.fake.email(),
             'first_name': self.fake.first_name(),
-            'last_name': self.fake.last_name(),
             'identity_document': self.fake.numerify(text='########'),
         }
         payload = utils.build_json_api_payload('customer', customer_data)
@@ -44,7 +43,6 @@ class CustomerCreateTestCase(test.APITestCase):
         customer_data = {
             'email': self.fake.email(),
             'first_name': self.fake.first_name(),
-            'last_name': self.fake.last_name(),
             'identity_document': self.fake.numerify(text='########'),
         }
         payload = utils.build_json_api_payload('customer', customer_data)
@@ -64,7 +62,6 @@ class CustomerCreateTestCase(test.APITestCase):
         customer_data = {
             'email': self.fake.email(),
             'first_name': self.fake.first_name(),
-            'last_name': self.fake.last_name(),
             'identity_document': self.fake.numerify(text='########'),
             'company': self.fake.company(),
         }
