@@ -1,8 +1,9 @@
 import templated_email
 from django import urls, http, views as django_views
+from rest_framework.settings import api_settings
 from rest_framework_json_api import views
 
-from . import models, serializers, permissions, mercadopago, afip, filters
+from . import models, serializers, authentication, permissions, mercadopago, afip, filters
 
 
 class ItemViewSet(views.ReadOnlyModelViewSet):
@@ -21,6 +22,9 @@ class OrderViewSet(views.viewsets.GenericViewSet,
                    views.viewsets.mixins.CreateModelMixin):
     queryset = models.Order.objects.order_by('id')
     serializer_class = serializers.OrderSerializer
+    authentication_classes = api_settings.DEFAULT_AUTHENTICATION_CLASSES + [
+        authentication.CustomerAuthentication,
+    ]
     permission_classes = (permissions.IsCustomer,)
 
     def perform_create(self, serializer):
