@@ -9,7 +9,7 @@ TRA_TTL = 36000
 TOKEN_CACHE_KEY = 'TOKEN'
 SIGN_CACHE_KEY = 'SIGN'
 EXPIRATION_CACHE_KEY = 'EXPIRATION'
-EXPIRATION_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
+EXPIRATION_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%f%z'
 
 INVOICE_TYPE = 11
 INVOICE_POINT_OF_SALE = 1
@@ -26,7 +26,7 @@ def _authenticate():
 
     if EXPIRATION_CACHE_KEY in auth_info and (
         timezone.datetime.strptime(auth_info[EXPIRATION_CACHE_KEY], EXPIRATION_DATE_FORMAT) <
-        timezone.datetime.now()
+        timezone.now()
     ):
         auth_info.clear()
 

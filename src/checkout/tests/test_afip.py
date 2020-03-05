@@ -40,10 +40,10 @@ class AfipGetClientTestCase(test.TestCase):
         # arrange
         token = fake.lexify(text='?????????')
         sign = fake.lexify(text='?????????')
-        expiration = fake.date_time_between(
+        expiration = timezone.make_aware(fake.date_time_between(
             start_date=timezone.now() + timezone.timedelta(hours=1),
             end_date=timezone.now() + timezone.timedelta(days=1),
-        ).strftime(afip.EXPIRATION_DATE_FORMAT)
+        )).strftime(afip.EXPIRATION_DATE_FORMAT)
         caches['afip'].set(afip.TOKEN_CACHE_KEY, token)
         caches['afip'].set(afip.SIGN_CACHE_KEY, sign)
         caches['afip'].set(afip.EXPIRATION_CACHE_KEY, expiration)
@@ -59,9 +59,9 @@ class AfipGetClientTestCase(test.TestCase):
         # arrange
         old_token = fake.lexify(text='?????????')
         old_sign = fake.lexify(text='?????????')
-        old_expiration = fake.date_time_between(
+        old_expiration = timezone.make_aware(fake.date_time_between(
             end_date='now',
-        ).strftime(afip.EXPIRATION_DATE_FORMAT)
+        )).strftime(afip.EXPIRATION_DATE_FORMAT)
         caches['afip'].set(afip.TOKEN_CACHE_KEY, old_token)
         caches['afip'].set(afip.SIGN_CACHE_KEY, old_sign)
         caches['afip'].set(afip.EXPIRATION_CACHE_KEY, old_expiration)
