@@ -35,10 +35,16 @@ class InvoiceInline(admin.StackedInline):
 
 
 class OrderAdmin(admin.ModelAdmin):
+    readonly_fields = ('order_total',)
     inlines = [
         OrderItemInline,
         InvoiceInline,
     ]
+
+    def order_total(self, order):
+        return order.calculate_total()
+
+    order_total.short_description = 'Total de la Orden'
 
 
 class CancellationItemInline(admin.TabularInline):
