@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.core.cache import caches
 
 from .. import factories, afip
+from . import utils
 
 fake = faker.Faker()
 
@@ -95,7 +96,7 @@ class AfipGenerateCAETestCase(test.TestCase):
     def test_should_create_cae(self, get_client):
         # arrange
         invoice_number = 5
-        invoice_total = self.order.calculate_total()
+        invoice_total = str(utils.quantize_decimal(self.order.calculate_total().amount))
         invoice_date = timezone.now().strftime('%Y%m%d')
 
         afip_client = mock.MagicMock()

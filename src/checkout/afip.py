@@ -3,6 +3,8 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.cache import caches
 
+from . import utils
+
 TRA_TTL = 36000
 TOKEN_CACHE_KEY = 'TOKEN'
 SIGN_CACHE_KEY = 'SIGN'
@@ -69,7 +71,7 @@ def generate_cae(order):
     document_type = INVOICE_NATIONAL_DOCUMENT_TYPE \
         if customer.is_identity_document_cuit else INVOICE_CUIT_DOCUMENT_TYPE
     invoice_number = int(client.CompUltimoAutorizado(INVOICE_TYPE, INVOICE_POINT_OF_SALE)) + 1
-    invoice_total = order.calculate_total()
+    invoice_total = str(utils.quantize_decimal(order.calculate_total().amount))
     invoice_date = timezone.now().strftime('%Y%m%d')
 
     client.CrearFactura(
