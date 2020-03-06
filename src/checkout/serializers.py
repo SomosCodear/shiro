@@ -2,6 +2,7 @@ import json
 from django.core import validators as django_validators
 from django.contrib import auth
 from django.utils.translation import gettext_lazy as _
+from rest_framework import validators
 from rest_framework_json_api import serializers, relations
 from djmoney.contrib import django_rest_framework as djmoney_serializers
 import model_utils
@@ -66,7 +67,10 @@ class ItemSerializer(serializers.ModelSerializer):
 
 
 class CustomerSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(source='user.email')
+    email = serializers.EmailField(
+        source='user.email',
+        validators=[validators.UniqueValidator(queryset=auth.get_user_model().objects.all())],
+    )
     first_name = serializers.CharField(source='user.first_name')
 
     class Meta:
