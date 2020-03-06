@@ -535,6 +535,8 @@ class OrderCreateTestCase(test.APITestCase):
         self.mp.create_preference.assert_called()
 
         order = models.Order.objects.first()
+        self.assertEqual(response.data['preference_id'], PREFERENCE_ID)
+        self.assertEqual(response.data['status'], models.Order.STATUS.IN_PROCESS)
         self.assertEqual(order.preference_id, PREFERENCE_ID)
         self.assertEqual(order.status, models.Order.STATUS.IN_PROCESS)
 

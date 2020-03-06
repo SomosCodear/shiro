@@ -140,8 +140,17 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Order
-        fields = ('id', 'customer', 'order_items', 'notes', 'discount_code', 'total')
-        read_only_fields = ('customer',)
+        fields = (
+            'id',
+            'order_items',
+            'notes',
+            'discount_code',
+            'customer',
+            'status',
+            'preference_id',
+            'total',
+        )
+        read_only_fields = ('customer', 'status', 'preference_id')
 
     def validate_order_items(self, order_items):
         if len(order_items) == 0:
