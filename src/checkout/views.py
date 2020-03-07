@@ -30,9 +30,14 @@ class OrderViewSet(views.viewsets.GenericViewSet,
     def perform_create(self, serializer):
         customer = self.request.user.customer
         order = serializer.save(customer=customer)
+        back_urls = serializer.validated_data.get('back_urls')
 
         notification_url = self.request.build_absolute_uri(urls.reverse('order-ipn'))
-        mercadopago.generate_order_preference(order, notification_url=notification_url)
+        mercadopago.generate_order_preference(
+            order,
+            notification_url=notification_url,
+            back_urls=back_urls,
+        )
 
 
 class OrderIPNView(django_views.View):

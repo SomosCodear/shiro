@@ -555,6 +555,25 @@ class OrderCreateTestCase(test.APITestCase):
             f'http://testserver{urls.reverse("order-ipn")}',
         )
 
+    def test_should_provide_back_urls_if_included_in_payload(self):
+        # arrange
+        items = [self.items[0], self.items[2]]
+        back_urls = {
+            'success': fake.url(),
+            'pending': fake.url(),
+            'failure': fake.url(),
+        }
+        payload = self.build_order_payload(items, back_urls=back_urls)
+
+        # act
+        response = self.client.post(self.url, payload)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        for key, value in back_urls.items():
+            self.assertEqual(self.mp.create_preference.call_args[0][0]['back_urls'][key], value)
+
 
 @test.override_settings(MERCADOPAGO_ACCESS_TOKEN='xxxx')
 class OrderIPNTestCase(test.APITestCase):

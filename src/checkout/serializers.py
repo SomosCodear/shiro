@@ -126,6 +126,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
         read_only_fields = ('price',)
 
 
+class BackUrlsSerializer(serializers.Serializer):
+    success = serializers.URLField(required=False)
+    pending = serializers.URLField(required=False)
+    failure = serializers.URLField(required=False)
+
+
 class OrderSerializer(serializers.ModelSerializer):
     total = djmoney_serializers.MoneyField(14, 2, source='calculate_total', read_only=True)
     order_items = WritableResourceRelatedField(
@@ -133,6 +139,7 @@ class OrderSerializer(serializers.ModelSerializer):
         queryset=models.OrderItem.objects.none(),
         many=True,
     )
+    back_urls = BackUrlsSerializer(required=False, write_only=True)
 
     included_serializers = {
         'order_items': OrderItemSerializer,
@@ -145,6 +152,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'order_items',
             'notes',
             'discount_code',
+            'back_urls',
             'customer',
             'status',
             'preference_id',
@@ -174,6 +182,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         order_items = validated_data.pop('order_items')
+        validated_data.pop('back_urls', None)
         order = models.Order.objects.create(**validated_data)
 
         for order_item_data in order_items:

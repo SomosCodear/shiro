@@ -36,7 +36,7 @@ def build_path(path, **kwargs):
     return path
 
 
-def generate_order_preference(order, notification_url=None):
+def generate_order_preference(order, notification_url=None, back_urls=None):
     mp = get_mp_client()
     preference = {
         'payer': {
@@ -56,6 +56,7 @@ def generate_order_preference(order, notification_url=None):
         ],
         'external_reference': str(order.id),
         'notification_url': notification_url,
+        'back_urls': back_urls,
     }
 
     preference = mp.create_preference(preference)
