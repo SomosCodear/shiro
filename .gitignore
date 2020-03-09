@@ -8,6 +8,9 @@ pids
 *.seed
 *.pid.lock
 
+# zappa
+zappa_settings.json
+
 # django
 media
 *__pycache__
