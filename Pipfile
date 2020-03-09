@@ -30,6 +30,7 @@ django-templated-email = "~=2.3"
 django-cors-headers = "~=3.2"
 django-storages = "~=1.9"
 django-amazon-ses = "~=3.0"
+sentry-sdk = "~=0.14"
 
 [requires]
 python_version = "3.7"
