@@ -23,6 +23,9 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 INTERNAL_IPS = ['127.0.0.1']
 
+CORS_ORIGIN_ALLOW_ALL = DEBUG
+CORS_ORIGIN_WHITELIST = os.getenv('CORS_ORIGIN_WHITELIST', '').split(',')
+
 ATOMIC_REQUESTS = True
 
 
@@ -39,12 +42,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'djmoney',
+    'corsheaders',
     'user',
     'checkout',
     'webconf',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
