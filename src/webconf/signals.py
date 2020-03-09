@@ -8,7 +8,7 @@ def send_pass_emails(sender, order=None, **kwargs):
         email = order_item.options.get(item_option__name='email').value
         templated_email.send_templated_mail(
             template_name='pass_paid',
-            from_email='no-reply@webconf.tech',
+            from_email=settings.DEFAULT_EMAIL,
             recipient_list=[email],
             context={
                 'email': email,

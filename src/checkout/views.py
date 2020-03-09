@@ -1,4 +1,5 @@
 import templated_email
+from django.conf import settings
 from django import urls, http, views as django_views
 from rest_framework.settings import api_settings
 from rest_framework_json_api import views
@@ -70,7 +71,7 @@ class OrderIPNView(django_views.View):
 
                 templated_email.send_templated_mail(
                     template_name='order_paid',
-                    from_email='no-reply@webconf.tech',
+                    from_email=settings.DEFAULT_EMAIL,
                     recipient_list=[order.customer.user.email],
                     context={
                         'order': order,
