@@ -70,28 +70,28 @@ class DiscountCode(models.Model):
 
         return discount
 
-    def calculate_discounted_total(self, total):
-        return total - self.calculate_discount(total)
-
-    def calculate_order_item_discounted_total(self, order_item):
-        total = order_item.calculate_base_total()
+    def calculate_order_item_discount(self, order_item):
+        discount = money.Money(0, 'ARS')
 
         if self.type == self.TYPES.ITEM and order_item.item in self.items.all():
-            total = self.calculate_discounted_total(total)
+            base_total = order_item.calculate_base_total()
+            discount = self.calculate_discount(base_total)
 
-        return total
+        return discount
 
-    def calculate_order_discounted_total(self, order):
+    def calculate_order_discount(self, order):
+        discount = money.Money(0, 'ARS')
+
         if self.type == self.TYPES.ORDER:
             base_total = order.calculate_base_total()
-            total = self.calculate_discounted_total(base_total)
+            discount = self.calculate_discount(base_total)
         elif self.type == self.TYPES.ITEM:
-            total = sum(
-                self.calculate_order_item_discounted_total(order_item)
+            discount = sum(
+                self.calculate_order_item_discount(order_item)
                 for order_item in order.order_items.all()
             )
 
-        return total
+        return discount
 
 
 class DiscountCodeRestriction(models.Model):
@@ -172,11 +172,16 @@ class Order(models.Model):
     def calculate_base_total(self):
         return sum(order_item.calculate_base_total() for order_item in self.order_items.all())
 
-    def calculate_total(self):
-        if self.discount_code is None:
-            total = self.calculate_base_total()
+    def calculate_discount(self):
+        if self.discount_code:
+            discount = self.discount_code.calculate_order_discount(self)
         else:
-            total = self.discount_code.calculate_order_discounted_total(self)
+            discount = money.Money(0, 'ARS')
+
+        return discount
+
+    def calculate_total(self):
+        total = self.calculate_base_total() - self.calculate_discount()
 
         return total
 
@@ -200,11 +205,16 @@ class OrderItem(models.Model):
     def calculate_base_total(self):
         return self.price * self.amount
 
-    def calculate_total(self):
-        if self.order.discount_code is None:
-            total = self.calculate_base_total()
+    def calculate_discount(self):
+        if self.order.discount_code is not None:
+            discount = self.order.discount_code.calculate_order_item_discount(self)
         else:
-            total = self.order.discount_code.calculate_order_item_discounted_total(self)
+            discount = money.Money(0, 'ARS')
+
+        return discount
+
+    def calculate_total(self):
+        total = self.calculate_base_total() - self.calculate_discount()
 
         return total
 
