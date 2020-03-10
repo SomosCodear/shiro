@@ -10,16 +10,16 @@ TOKEN_CACHE_KEY = 'TOKEN'
 SIGN_CACHE_KEY = 'SIGN'
 EXPIRATION_CACHE_KEY = 'EXPIRATION'
 EXPIRATION_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%f%z'
+WSFEV1_DATE_FORMAT = '%Y%m%d'
 
+COMPANY_START_OF_OPERATIONS = timezone.datetime(year=2019, month=10, day=1)
 INVOICE_TYPE = 11
 INVOICE_POINT_OF_SALE = 1
 INVOICE_CONCEPT = 3
 INVOICE_CUIT_DOCUMENT_TYPE = 80
 INVOICE_NATIONAL_DOCUMENT_TYPE = 96
-INVOICE_SERVICE_DATE_START = '20200529'
-INVOICE_SERVICE_DATE_END = '20200530'
-
-CAE_EXPIRATION_DATE_FORMAT = '%Y%m%d'
+INVOICE_SERVICE_START_DATE = timezone.datetime(year=2020, month=5, day=29)
+INVOICE_SERVICE_END_DATE = timezone.datetime(year=2020, month=5, day=30)
 
 
 def _authenticate():
@@ -79,7 +79,7 @@ def generate_invoice_code(invoice):
         invoice['invoice_type'],
         invoice['invoice_point_of_sale'],
         invoice['invoice_cae'],
-        invoice['invoice_payment_date'].strftime(CAE_EXPIRATION_DATE_FORMAT),
+        invoice['invoice_payment_date'].strftime(WSFEV1_DATE_FORMAT),
     )
 
     verification_code = generate_verification_number(code)
@@ -109,8 +109,8 @@ def generate_invoice(order):
         'invoice_number': int(client.CompUltimoAutorizado(INVOICE_TYPE, INVOICE_POINT_OF_SALE)) + 1,
         'invoice_date': now,
         'invoice_payment_date': now,
-        'invoice_service_start_date': INVOICE_SERVICE_DATE_START,
-        'invoice_service_end_date': INVOICE_SERVICE_DATE_END,
+        'invoice_service_start_date': INVOICE_SERVICE_START_DATE,
+        'invoice_service_end_date': INVOICE_SERVICE_END_DATE,
         'invoice_raw_total': str(utils.quantize_decimal(order.calculate_base_total().amount)),
         'invoice_discount': str(utils.quantize_decimal(order.calculate_discount().amount)),
         'invoice_total': str(utils.quantize_decimal(order.calculate_total().amount)),
@@ -126,7 +126,13 @@ def generate_invoice(order):
         ],
     }
 
-    formatted_invoice_date = invoice['invoice_date'].strftime('%Y%m%d')
+    formatted_invoice_date = invoice['invoice_date'].strftime(WSFEV1_DATE_FORMAT)
+    formatted_service_start_date = invoice['invoice_service_start_date'].strftime(
+        WSFEV1_DATE_FORMAT,
+    )
+    formatted_service_end_date = invoice['invoice_service_end_date'].strftime(
+        WSFEV1_DATE_FORMAT,
+    )
 
     client.CrearFactura(
         concepto=INVOICE_CONCEPT,
@@ -140,15 +146,15 @@ def generate_invoice(order):
         imp_neto=invoice['invoice_total'],
         fecha_cbte=formatted_invoice_date,
         fecha_venc_pago=formatted_invoice_date,
-        fecha_serv_desde=invoice['invoice_service_start_date'],
-        fecha_serv_hasta=invoice['invoice_service_end_date'],
+        fecha_serv_desde=formatted_service_start_date,
+        fecha_serv_hasta=formatted_service_end_date,
     )
     client.CAESolicitar()
 
     invoice['invoice_cae'] = client.CAE
     invoice['invoice_cae_expiration_date'] = timezone.datetime.strptime(
         client.Vencimiento,
-        CAE_EXPIRATION_DATE_FORMAT,
+        WSFEV1_DATE_FORMAT,
     )
     invoice['invoice_code'] = generate_invoice_code(invoice)
 

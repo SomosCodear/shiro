@@ -117,8 +117,8 @@ class AfipGenerateInvoiceTestCase(test.TestCase):
             'imp_neto': invoice_total,
             'fecha_cbte': invoice_date,
             'fecha_venc_pago': invoice_date,
-            'fecha_serv_desde': afip.INVOICE_SERVICE_DATE_START,
-            'fecha_serv_hasta': afip.INVOICE_SERVICE_DATE_END,
+            'fecha_serv_desde': afip.INVOICE_SERVICE_START_DATE.strftime(afip.WSFEV1_DATE_FORMAT),
+            'fecha_serv_hasta': afip.INVOICE_SERVICE_END_DATE.strftime(afip.WSFEV1_DATE_FORMAT),
         }
 
         # act
