@@ -13,6 +13,11 @@ EXPIRATION_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%f%z'
 WSFEV1_DATE_FORMAT = '%Y%m%d'
 
 COMPANY_START_OF_OPERATIONS = timezone.datetime(year=2019, month=10, day=1)
+COMPANY_NAME = 'COMUNIDAD DE DESARROLLADORES DE ARGENTINA - ASOCIACIÓN CIVIL'
+COMPANY_NAME_SHORT = 'CoDeAr'
+COMPANY_ADDRESS = 'Dean Funes 68, Piso 2, Dpto H - Barrio Centro Sur, Córdoba'
+COMPANY_BRUTE_INCOME = 'Exento'
+COMPANY_IVA = 'IVA Sujeto Exento'
 INVOICE_TYPE = 11
 INVOICE_POINT_OF_SALE = 1
 INVOICE_CONCEPT = 3
@@ -74,7 +79,7 @@ def generate_verification_number(code):
 
 
 def generate_invoice_code(invoice):
-    code = '{}{:03d}{:05d}{}'.format(
+    code = '{}{:03d}{:05d}{}{}'.format(
         invoice['company_cuit'],
         invoice['invoice_type'],
         invoice['invoice_point_of_sale'],
@@ -93,12 +98,13 @@ def generate_invoice(order):
     customer = order.customer
     now = timezone.now()
     invoice = {
-        'company_name': 'Comunidad de Desarrolladores de Argentina',
-        'company_name_short': 'CoDeAr',
-        'company_address': 'TBD',
+        'company_name': COMPANY_NAME,
+        'company_name_short': COMPANY_NAME_SHORT,
+        'company_address': COMPANY_ADDRESS,
         'company_cuit': settings.AFIP_CUIT,
-        'company_brute_income': 12345678,
-        'company_start_of_operations': timezone.datetime.strptime('2019-10-01', '%Y-%m-%d'),
+        'company_brute_income': COMPANY_BRUTE_INCOME,
+        'company_iva': COMPANY_IVA,
+        'company_start_of_operations': COMPANY_START_OF_OPERATIONS,
         'client_identity_document': customer.identity_document,
         'client_document_type': INVOICE_NATIONAL_DOCUMENT_TYPE
         if customer.is_identity_document_cuit else INVOICE_CUIT_DOCUMENT_TYPE,
