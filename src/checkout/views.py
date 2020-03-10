@@ -89,7 +89,7 @@ class OrderIPNView(django_views.View):
                     from_email=settings.DEFAULT_EMAIL,
                     recipient_list=[order.customer.user.email],
                     attachments=[
-                        ('invoice.pdf', invoice.file.read(), 'application/pdf'),
+                        ('factura.pdf', invoice.file.read(), 'application/pdf'),
                     ],
                     context={
                         'order': order,
