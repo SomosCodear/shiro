@@ -57,7 +57,9 @@
           </td>
           <td>
             <div>
-              Punto de Venta: {{point_of_sale}}     Comp. Nro: {{invoice_number|stringformat:"08d"}}
+              Punto de Venta: {{invoice_point_of_sale}}
+              &nbsp;&nbsp;&nbsp;&nbsp;
+              Comp. Nro: {{invoice_number|stringformat:"08d"}}
             </div>
             <div>
               Fecha de emisión: {{invoice_date|date:"d/m/Y"}}
