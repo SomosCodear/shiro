@@ -1,54 +1,142 @@
+{% load barcode %}
 <html>
   <head>
     <style>
-      table {
-        width: 100%;
-      }
-
-      .header .top {
-        text-align: center;
-      }
-
-      .header .top td {
-        width: 45%;
-      }
-
-      .header .top td:not(:first-child):not(:last-child) {
-        width: 5%;
+      @font-face {
+        font-family: 'Roboto';
+        font-style: normal;
+        font-weight: 400;
+        src: local('Roboto'), local('Roboto-Regular'), url(https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
       }
 
       @page {
         size: A4;
         margin: 0mm;
       }
+
+      body, html {
+        margin: 0;
+      }
+
+      table {
+        font-family: Roboto;
+        font-size: 12px;
+      }
+
+      body > table {
+        width: 100%;
+        padding: 15px;
+      }
+
+      .header, .dates, .customer {
+        border-bottom: solid 1px;
+      }
+
+      .header tr:first-child {
+        text-align: center;
+      }
+
+      .header tr:first-child td {
+        width: 42%;
+      }
+
+      .header tr:first-child td:not(:first-child):not(:last-child) {
+        width: 8%;
+      }
+
+      .header tr:last-child td {
+        vertical-align: bottom;
+        padding-top: 20px;
+      }
+
+      .big {
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      .invoice-type-code {
+        font-size: 10px;
+        font-weight: bold;
+      }
+
+      .invoice-type {
+        border: solid 1px;
+      }
+
+      .items th {
+        text-align: right;
+        padding-bottom: 10px;
+      }
+
+      .items th:first-child {
+        text-align: left;
+      }
+
+      .items td:not(:first-child) {
+        text-align: right;
+      }
+
+      .footer {
+        position: fixed;
+        bottom: 0;
+      }
+
+      .footer svg {
+        width: 85mm;
+      }
+
+      .footer text {
+        transform: translateX(5px);
+      }
+
+      .footer > tbody > tr > td:first-child {
+        text-align: center;
+      }
+
+      .footer td:last-child {
+        text-align: right;
+      }
+
+      .totals {
+        display: inline-block;
+      }
+
+      .totals td:first-child {
+        text-align: right;
+        padding-right: 20px;
+      }
     </style>
   </head>
   <body>
     <table class="header">
       <tbody>
-        <tr class="top">
-          <td>
+        <tr>
+          <td class="big">
             {{company_name_short}}
           </td>
-          <td colspan="2">
-            {{invoice_type_letter}}
-            <br />
-            COD. {{invoice_type}}
+          <td colspan="2" class="invoice-type">
+            <div class="big">
+              {{invoice_type_letter|upper}}
+            </div>
+            <div class="invoice-type-code">
+              COD. {{invoice_type|stringformat:"03d"}}
+            </div>
           </td>
-          <td>
+          <td class="big">
             Factura
           </td>
         </tr>
         <tr>
           <td>
             <div>
-              Razon Social: {{company_name}}
+              <b>Razon Social:</b> {{company_name}}
             </div>
             <div>
-              Domicilio Comercial: {{company_address}}
+              <b>Domicilio Comercial:</b> {{company_address}}
             </div>
             <div>
-              Condición frente al IVA: Excento
+              <b>Condición frente al IVA:</b> {{company_iva}}
             </div>
           </td>
           <td>
@@ -57,68 +145,64 @@
           </td>
           <td>
             <div>
-              Punto de Venta: {{invoice_point_of_sale}}
+              <b>Punto de Venta:</b> {{invoice_point_of_sale}}
               &nbsp;&nbsp;&nbsp;&nbsp;
-              Comp. Nro: {{invoice_number|stringformat:"08d"}}
+              <b>Comp. Nro:</b> {{invoice_number|stringformat:"08d"}}
             </div>
             <div>
-              Fecha de emisión: {{invoice_date|date:"d/m/Y"}}
+              <b>Fecha de emisión:</b> {{invoice_date|date:"d/m/Y"}}
             </div>
             <div>
-              CUIT: {{company_cuit}}
+              <b>CUIT:</b> {{company_cuit}}
             </div>
             <div>
-              Ingresos Brutos: {{company_brute_income}}
+              <b>Ingresos Brutos:</b> {{company_brute_income}}
             </div>
             <div>
-              Fecha de inicio de actividades: {{company_start_of_operations|date:"d/m/Y"}}
+              <b>Fecha de inicio de actividades:</b> {{company_start_of_operations|date:"d/m/Y"}}
             </div>
-          </td>
-        <tr>
-      </tbody>
-    <table>
-    <table>
-      <tbody>
-        <tr>
-          <td>
-            Periodo Facturado Desde: {{invoice_service_start_date|date:"d/m/Y"}}
-          </td>
-          <td>
-            Hasta: {{invoice_service_end_date|date:"d/m/Y"}}
-          </td>
-          <td>
-            Fecha Vto. para el pago: {{invoice_payment_date|date:"d/m/Y"}}
           </td>
         </tr>
       </tbody>
     </table>
-    <table>
+    <table class="dates">
       <tbody>
         <tr>
           <td>
-            {% if client_document_type == 80 %}CUIT{% else %}DNI{% endif %}:
+            <b>Periodo Facturado Desde:</b> {{invoice_service_start_date|date:"d/m/Y"}}
+          </td>
+          <td>
+            <b>Hasta:</b> {{invoice_service_end_date|date:"d/m/Y"}}
+          </td>
+          <td>
+            <b>Fecha Vto. para el pago:</b> {{invoice_payment_date|date:"d/m/Y"}}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <table class="customer">
+      <tbody>
+        <tr>
+          <td>
+            <b>Apellido y Nombre / Razón Social:</b> {{client_name}}
+          </td>
+          <td>
+            <b>{% if client_document_type == 80 %}CUIT{% else %}DNI{% endif %}:</b>
             &nbsp;
             {{client_identity_document}}
           </td>
-          <td>
-            Apellido y Nombre / Razón Social: {{client_name}}
-          </td>
         </tr>
         <tr>
           <td>
-            Condición frente al IVA: Consumidor Final
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Condición de Venta: Contado
+            <b>Condición frente al IVA:</b> Consumidor Final
           </td>
           <td>
+            <b>Condición de Venta:</b> Contado
           </td>
         </tr>
       </tbody>
     </table>
-    <table>
+    <table class="items">
       <thead>
         <tr>
           <th>
@@ -154,22 +238,46 @@
         {% endfor %}
       </tbody>
     </table>
-    <table>
+    <table class="footer">
       <tr>
         <td>
-          {{invoice_code}}
+          <img src="{{invoice_code|generate_barcode}}" />
         </td>
         <td>
-          Subtotal: {{invoice_raw_total}}
+          <table class="totals">
+            <tbody>
+              <tr>
+                <td>
+                  <b>Subtotal:</b>
+                </td>
+                <td>
+                  {{invoice_raw_total}}
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <b>Descuento:</b>
+                </td>
+                <td>
+                  {{invoice_discount}}
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <b>Total:</b>
+                </td>
+                <td>
+                  {{invoice_total}}
+                </td>
+              </tr>
+            </tbody>
+          </table>
           <br />
-          Descuento: {{invoice_discount}}
-          <br />
-          Total: {{invoice_total}}
           <br />
           <br />
-          CAE Nº: {{invoice_cae}}
+          <b>CAE Nº:</b> {{invoice_cae}}
           <br />
-          Fecha de Vto. CAE: {{invoice_cae_expiration_date|date:"d/m/Y"}}
+          <b>Fecha de Vto. CAE:</b> {{invoice_cae_expiration_date|date:"d/m/Y"}}
         </td>
       </tr>
     </table>

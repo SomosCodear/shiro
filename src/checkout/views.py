@@ -71,11 +71,12 @@ class OrderIPNView(django_views.View):
                 order.save()
 
                 invoice_data = afip.generate_invoice(order)
-                invoice_pdf_writer = weasyprint.HTML(
-                    string=loader.render_to_string('invoice.html', context=invoice_data),
-                )
+
+                invoice_html = loader.render_to_string('invoice.html', context=invoice_data)
                 invoice_pdf = io.BytesIO()
-                invoice_pdf_writer.write_pdf(invoice_pdf)
+                invoice_pdf_font_config = weasyprint.fonts.FontConfiguration()
+                invoice_pdf_writer = weasyprint.HTML(string=invoice_html)
+                invoice_pdf_writer.write_pdf(invoice_pdf, font_config=invoice_pdf_font_config)
 
                 invoice = models.Invoice.objects.create(
                     order=order,
