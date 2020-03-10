@@ -594,9 +594,16 @@ class OrderIPNTestCase(test.APITestCase):
 
         self.afip_patcher = mock.patch('checkout.views.afip', spec=True)
         self.afip = self.afip_patcher.start()
-        self.afip.generate_cae.return_value = (self.invoice_number, self.invoice_cae)
+        self.afip.generate_invoice.return_value = {
+            'invoice_number': self.invoice_number,
+            'invoice_cae': self.invoice_cae,
+        }
+
+        self.weasyprint_patcher = mock.patch('checkout.views.weasyprint')
+        self.weasyprint = self.weasyprint_patcher.start()
 
     def tearDown(self):
+        self.weasyprint.stop()
         self.afip_patcher.stop()
         self.mp_patcher.stop()
 
@@ -639,7 +646,8 @@ class OrderIPNTestCase(test.APITestCase):
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.afip.generate_cae.assert_called_once_with(self.order)
+        self.afip.generate_invoice.assert_called_once_with(self.order)
+        self.weasyprint.HTML.return_value.write_pdf.assert_called_once()
 
         self.order.refresh_from_db()
         self.assertIsNotNone(self.order.invoice)

@@ -1,0 +1,170 @@
+<html>
+  <head>
+    <style>
+      table {
+        width: 100%;
+      }
+
+      .header .top {
+        text-align: center;
+      }
+
+      .header .top td {
+        width: 45%;
+      }
+
+      .header .top td:not(:first-child):not(:last-child) {
+        width: 5%;
+      }
+    </style>
+  </head>
+  <body>
+    <table class="header">
+      <tbody>
+        <tr class="top">
+          <td>
+            {{company_name_short}}
+          </td>
+          <td colspan="2">
+            {{invoice_type_letter}}
+            <br />
+            COD. {{invoice_type}}
+          </td>
+          <td>
+            Factura
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div>
+              Razon Social: {{company_name}}
+            </div>
+            <div>
+              Domicilio Comercial: {{company_address}}
+            </div>
+            <div>
+              Condición frente al IVA: Excento
+            </div>
+          </td>
+          <td>
+          </td>
+          <td>
+          </td>
+          <td>
+            <div>
+              Punto de Venta: {{point_of_sale}}     Comp. Nro: {{invoice_number|stringformat:"08d"}}
+            </div>
+            <div>
+              Fecha de emisión: {{invoice_date|date:"d/m/Y"}}
+            </div>
+            <div>
+              CUIT: {{company_cuit}}
+            </div>
+            <div>
+              Ingresos Brutos: {{company_brute_income}}
+            </div>
+            <div>
+              Fecha de inicio de actividades: {{company_start_of_operations|date:"d/m/Y"}}
+            </div>
+          </td>
+        <tr>
+      </tbody>
+    <table>
+    <table>
+      <tbody>
+        <tr>
+          <td>
+            Periodo Facturado Desde: {{invoice_service_start_date|date:"d/m/Y"}}
+          </td>
+          <td>
+            Hasta: {{invoice_service_end_date|date:"d/m/Y"}}
+          </td>
+          <td>
+            Fecha Vto. para el pago: {{invoice_service_end_date|date:"d/m/Y"}}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <table>
+      <tbody>
+        <tr>
+          <td>
+            {% if client_document_type == 80 %}CUIT{% else %}DNI{% endif %}:
+            &nbsp;
+            {{client_identity_document}}
+          </td>
+          <td>
+            Apellido y Nombre / Razón Social: {{client_name}}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Condición frente al IVA: Consumidor Final
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Condición de Venta: Contado
+          </td>
+          <td>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <table>
+      <thead>
+        <tr>
+          <th>
+            Descripción
+          </th>
+          <th>
+            Cantidad
+          </th>
+          <th>
+            Precio Unitario
+          </th>
+          <th>
+            Subtotal
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in invoice_items %}
+        <tr>
+          <td>
+            {{item.name}}
+          </td>
+          <td>
+            {{item.amount}}
+          </td>
+          <td>
+            {{item.unit_price}}
+          </td>
+          <td>
+            {{item.total_price}}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <table>
+      <tr>
+        <td>
+          {{invoice_code}}
+        </td>
+        <td>
+          Subtotal: {{invoice_raw_total}}
+          <br />
+          Descuento: {{invoice_discount}}
+          <br />
+          Total: {{invoice_total}}
+          <br />
+          <br />
+          CAE Nº: {{invoice_cae}}
+          <br />
+          Fecha de Vto. CAE: {{invoice_cae_expiration_date|date:"d/m/Y"}}
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
