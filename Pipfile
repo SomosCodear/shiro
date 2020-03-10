@@ -31,6 +31,8 @@ django-cors-headers = "~=3.2"
 django-storages = "~=1.9"
 django-amazon-ses = "~=3.0"
 sentry-sdk = "~=0.14"
+weasyprint = "~=51"
+python-barcode = "~=0.11"
 
 [requires]
 python_version = "3.7"
