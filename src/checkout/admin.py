@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils import html
 from . import models
 
 
@@ -27,6 +28,20 @@ class DiscountCodeAdmin(admin.ModelAdmin):
 class OrderItemInline(admin.TabularInline):
     model = models.OrderItem
     extra = 0
+    readonly_fields = ('preferences',)
+
+    def preferences(self, order_item):
+        print(order_item)
+        return html.format_html_join(
+            '',
+            '<div><b>{}:</b> {}</div>',
+            (
+                (option.item_option.name, option.value)
+                for option in order_item.options.select_related('item_option')
+            ),
+        )
+
+    preferences.short_description = 'Preferencias'
 
 
 class InvoiceInline(admin.StackedInline):
