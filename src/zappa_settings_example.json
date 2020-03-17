@@ -2,13 +2,15 @@
     "staging": {
         "aws_region": "$ZAPPA_AWS_REGION",
         "django_settings": "shiro.settings",
-        "profile_name": "codear",
-        "project_name": "shiro",
+        "profile_name": "$ZAPPA_PROFILE_NAME",
+        "project_name": "$ZAPPA_PROJECT_NAME",
         "runtime": "python3.7",
-        "s3_bucket": "$ZAPPA_BUCKET_NAME",
+        "s3_bucket": "$ZAPPA_STAGING_BUCKET_NAME",
+        "domain": "$ZAPPA_STAGING_DOMAIN_NAME",
+        "certificate_arn": "$ZAPPA_STAGING_CERTIFICATE_ARN",
         "vpc_config": {
-            "SubnetIds": ["$ZAPPA_DATABASE_SUBNET_1", "$ZAPPA_DATABASE_SUBNET_2"],
-            "SecurityGroupIds": ["$ZAPPA_DATABASE_SECURITY_GROUP_ID"]
+            "SubnetIds": ["$ZAPPA_STAGING_DATABASE_SUBNET_1", "$ZAPPA_STAGING_DATABASE_SUBNET_2"],
+            "SecurityGroupIds": ["$ZAPPA_STAGING_DATABASE_SECURITY_GROUP_ID"]
         }
     }
 }
