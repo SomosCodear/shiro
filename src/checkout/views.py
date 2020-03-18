@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core import files
 from django.template import loader
 from django import urls, http, views as django_views
+from rest_framework import permissions as drf_permissions
 from rest_framework.settings import api_settings
 from rest_framework_json_api import views
 
@@ -24,13 +25,34 @@ class CustomerViewSet(views.viewsets.GenericViewSet,
 
 
 class OrderViewSet(views.viewsets.GenericViewSet,
-                   views.viewsets.mixins.CreateModelMixin):
+                   views.AutoPrefetchMixin,
+                   views.PreloadIncludesMixin,
+                   views.RelatedMixin,
+                   views.viewsets.mixins.CreateModelMixin,
+                   views.viewsets.mixins.ListModelMixin):
     queryset = models.Order.objects.order_by('id')
     serializer_class = serializers.OrderSerializer
+    select_for_includes = {
+        '__all__': ['customer', 'discount_code'],
+    }
+    prefetch_for_includes = {
+        '__all__': ['order_items'],
+        'order_items': ['order_items__options'],
+        'order_items.item': ['order_items__options', 'order_items__item__options'],
+        'order_items.item.options': ['order_items__options', 'order_items__item__options'],
+    }
     authentication_classes = api_settings.DEFAULT_AUTHENTICATION_CLASSES + [
         authentication.CustomerAuthentication,
     ]
-    permission_classes = (permissions.IsCustomer,)
+    permission_classes = (drf_permissions.IsAdminUser | permissions.IsCustomer,)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.request.auth == authentication.CUSTOMER_AUTH_SCHEMA:
+            queryset = queryset.filter(customer=self.request.user.customer)
+
+        return queryset
 
     def perform_create(self, serializer):
         customer = self.request.user.customer

@@ -8,7 +8,7 @@ from rest_framework import test, status
 from djmoney import money
 
 from user import factories as user_factories
-from .. import factories, models, mercadopago
+from .. import factories, models, mercadopago, authentication
 from . import utils
 
 fake = faker.Faker()
@@ -573,6 +573,137 @@ class OrderCreateTestCase(test.APITestCase):
 
         for key, value in back_urls.items():
             self.assertEqual(self.mp.create_preference.call_args[0][0]['back_urls'][key], value)
+
+
+class OrderListTestCase(test.APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.url = urls.reverse('order-list')
+        cls.admin_user = user_factories.UserFactory(is_staff=True)
+
+    def setUp(self):
+        self.orders = [factories.OrderFactory() for i in range(5)]
+        self.order = self.orders[0]
+        self.customer = self.order.customer
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'{authentication.CUSTOMER_AUTH_SCHEMA} {self.customer.user.email} '
+                               f'{self.customer.identity_document}',
+        )
+
+    def test_list_all_orders_for_admin_authenticated_user(self):
+        # arrange
+        self.client.credentials()
+        self.client.force_login(self.admin_user)
+
+        # act
+        response = self.client.get(self.url)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [order['id'] for order in response.data['results']],
+            [order.id for order in self.orders],
+        )
+
+    def test_list_customer_orders_for_customer_authentication(self):
+        # act
+        response = self.client.get(self.url)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([order['id'] for order in response.data['results']], [self.orders[0].id])
+
+    def test_should_allow_to_include_discount_code(self):
+        # arrange
+        self.order.discount_code = factories.DiscountCodeFactory()
+        self.order.save()
+
+        # act
+        response = self.client.get(f'{self.url}?include=discount-code')
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        included = json.loads(response.content)['included']
+        self.assertEqual(len(included), 1)
+        self.assertEqual(included[0]['id'], str(self.order.discount_code.id))
+
+    def test_should_allow_to_include_order_items(self):
+        # act
+        response = self.client.get(f'{self.url}?include=order-items')
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        included = json.loads(response.content)['included']
+        self.assertEqual(
+            [int(item['id']) for item in included],
+            list(self.order.order_items.values_list('id', flat=True)),
+        )
+
+    def test_should_allow_to_include_options(self):
+        # arrange
+        order_item = self.order.order_items.first()
+        item_option = factories.ItemOptionFactory(item=order_item.item)
+        order_item_option = factories.OrderItemOptionFactory(
+            order_item=order_item,
+            item_option=item_option,
+        )
+
+        # act
+        response = self.client.get(f'{self.url}?include=order-items.options')
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        included_options = [
+            included
+            for included in json.loads(response.content)['included']
+            if included['type'] == 'order-item-option'
+        ]
+        self.assertEqual(len(included_options), 1)
+        self.assertEqual(included_options[0]['id'], str(order_item_option.id))
+
+    def test_should_allow_to_include_items(self):
+        # act
+        response = self.client.get(f'{self.url}?include=order-items.item')
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        included_options = [
+            included
+            for included in json.loads(response.content)['included']
+            if included['type'] == 'item'
+        ]
+        self.assertEqual(len(included_options), self.order.items.count())
+        self.assertEqual(
+            [int(item['id']) for item in included_options],
+            list(self.order.items.values_list('id', flat=True)),
+        )
+
+    def test_should_allow_to_include_item_options(self):
+        # arrange
+        order_item = self.order.order_items.first()
+        item_option = factories.ItemOptionFactory(item=order_item.item)
+        factories.OrderItemOptionFactory(
+            order_item=order_item,
+            item_option=item_option,
+        )
+
+        # act
+        response = self.client.get(f'{self.url}?include=order-items.options.item_option')
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        included_options = [
+            included
+            for included in json.loads(response.content)['included']
+            if included['type'] == 'item-option'
+        ]
+        self.assertEqual(len(included_options), 1)
+        self.assertEqual(included_options[0]['id'], str(item_option.id))
 
 
 @test.override_settings(MERCADOPAGO_ACCESS_TOKEN='xxxx')

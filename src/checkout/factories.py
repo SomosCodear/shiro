@@ -85,3 +85,12 @@ class OrderItemFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = models.OrderItem
+
+
+class OrderItemOptionFactory(factory.DjangoModelFactory):
+    order_item = factory.SubFactory(OrderItemFactory)
+    item_option = factory.SubFactory(ItemOptionFactory)
+    value = factory.Faker('word')
+
+    class Meta:
+        model = models.OrderItemOption

@@ -10,6 +10,6 @@ router.register('customers', views.CustomerViewSet)
 router.register('orders', views.OrderViewSet)
 router.register('discount-codes', views.DiscountViewSet)
 
-urlpatterns = router.urls + [
+urlpatterns = [
     urls.path('orders/ipn/', csrf.csrf_exempt(views.OrderIPNView.as_view()), name='order-ipn'),
-]
+] + router.urls

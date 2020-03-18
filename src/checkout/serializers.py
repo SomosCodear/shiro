@@ -88,6 +88,12 @@ class CustomerSerializer(serializers.ModelSerializer):
         return customer
 
 
+class DiscountCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.DiscountCode
+        fields = ('id', 'code', 'items', 'type', 'percentage', 'fixed_value')
+
+
 class OrderItemOptionSerializer(serializers.ModelSerializer):
     included_serializers = {
         'item_option': ItemOptionSerializer,
@@ -143,6 +149,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     included_serializers = {
         'order_items': OrderItemSerializer,
+        'discount_code': DiscountCodeSerializer,
     }
 
     class Meta:
@@ -200,9 +207,3 @@ class IPNSerializer(serializers.Serializer):
         choices=model_utils.Choices(*[topic.value for topic in mercadopago.IPNTopic]),
     )
     id = serializers.CharField()
-
-
-class DiscountCodeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.DiscountCode
-        fields = ('id', 'code', 'items', 'type', 'percentage', 'fixed_value')
