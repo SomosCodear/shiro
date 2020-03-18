@@ -120,6 +120,7 @@ class Customer(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        related_name='customer',
     )
     identity_document = models.CharField(max_length=50)
     company = models.CharField(max_length=100, null=True, blank=True)
