@@ -597,6 +597,7 @@ class OrderIPNTestCase(test.APITestCase):
         self.afip.generate_invoice.return_value = {
             'invoice_number': self.invoice_number,
             'invoice_cae': self.invoice_cae,
+            'invoice_code': fake.numerify('######'),
         }
 
         self.weasyprint_patcher = mock.patch('checkout.views.weasyprint')
