@@ -18,3 +18,7 @@ src/shiro/settings/local.py
 
 # env
 .env
+
+# terraform
+.terraform
+terraform.tfstate.d
