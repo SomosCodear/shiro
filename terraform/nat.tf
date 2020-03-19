@@ -40,4 +40,11 @@ resource "aws_instance" "nat" {
   volume_tags = {
     Name = "${var.project_name}-nat"
   }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sysctl -w net.ipv4.ip_forward=1",
+      "/sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
+    ]
+  }
 }
