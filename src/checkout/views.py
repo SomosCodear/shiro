@@ -1,6 +1,7 @@
 import io
 import weasyprint
 import templated_email
+from django.db import transaction
 from django.conf import settings
 from django.core import files
 from django.template import loader
@@ -63,6 +64,7 @@ class OrderViewSet(views.viewsets.GenericViewSet,
 
         return queryset
 
+    @transaction.atomic
     def perform_create(self, serializer):
         customer = self.request.user.customer
         order = serializer.save(customer=customer)

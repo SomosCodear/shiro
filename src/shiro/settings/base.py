@@ -26,8 +26,6 @@ INTERNAL_IPS = ['127.0.0.1']
 CORS_ORIGIN_ALLOW_ALL = DEBUG
 CORS_ORIGIN_WHITELIST = os.getenv('CORS_ORIGIN_WHITELIST', 'http://localhost').split(',')
 
-ATOMIC_REQUESTS = True
-
 
 # Application definition
 
