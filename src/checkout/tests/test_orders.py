@@ -8,7 +8,7 @@ from rest_framework import test, status
 from djmoney import money
 
 from user import factories as user_factories
-from .. import factories, models, mercadopago, authentication
+from .. import factories, models, mercadopago
 from . import utils
 
 fake = faker.Faker()
@@ -27,7 +27,7 @@ class OrderCreateTestCase(test.APITestCase):
         ]
 
     def setUp(self):
-        self.client.force_login(self.customer.user)
+        self.client.credentials(**utils.build_customer_authentication_credentials(self.customer))
 
         self.mp_patcher = mock.patch('checkout.mercadopago.get_mp_client', spec=True)
         get_mp_client = self.mp_patcher.start()
@@ -65,7 +65,7 @@ class OrderCreateTestCase(test.APITestCase):
         # arrange
         items = [self.items[0], self.items[2]]
         payload = self.build_order_payload(items)
-        self.client.logout()
+        self.client.credentials(HTTP_AUTHORIZATION=None)
 
         # act
         response = self.client.post(self.url, payload)
@@ -585,10 +585,7 @@ class OrderListTestCase(test.APITestCase):
         self.orders = [factories.OrderFactory() for i in range(5)]
         self.order = self.orders[0]
         self.customer = self.order.customer
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'{authentication.CUSTOMER_AUTH_SCHEMA} {self.customer.user.email} '
-                               f'{self.customer.identity_document}',
-        )
+        self.client.credentials(**utils.build_customer_authentication_credentials(self.customer))
 
     def test_list_all_orders_for_admin_authenticated_user(self):
         # arrange

@@ -34,7 +34,7 @@ class ItemOptionFactory(factory.DjangoModelFactory):
 
 class CustomerFactory(factory.DjangoModelFactory):
     user = factory.SubFactory(user_factories.UserFactory)
-    identity_document = factory.Faker('random_number', digits=8)
+    identity_document = factory.Faker('numerify', text='########')
 
     class Meta:
         model = models.Customer
