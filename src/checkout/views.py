@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core import files
 from django.template import loader
 from django import urls, http, views as django_views
-from rest_framework import permissions as drf_permissions
+from rest_framework import permissions as drf_permissions, decorators, response
 from rest_framework.settings import api_settings
 from rest_framework_json_api import views
 
@@ -22,6 +22,15 @@ class CustomerViewSet(views.viewsets.GenericViewSet,
                       views.viewsets.mixins.CreateModelMixin):
     queryset = models.Customer.objects.order_by('id')
     serializer_class = serializers.CustomerSerializer
+
+    @decorators.action(
+        detail=False,
+        methods=['get'],
+        authentication_classes=[authentication.CustomerAuthentication],
+        permission_classes=(permissions.IsCustomer,),
+    )
+    def verify(self, request):
+        return response.Response()
 
 
 class OrderViewSet(views.viewsets.GenericViewSet,

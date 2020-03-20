@@ -4,8 +4,8 @@ from django.contrib import auth
 from rest_framework import test, status
 
 from user import factories as user_factories
+from .. import models, factories, authentication
 from . import utils
-from .. import models
 
 
 class CustomerCreateTestCase(test.APITestCase):
@@ -94,3 +94,38 @@ class CustomerCreateTestCase(test.APITestCase):
         # assert
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0]['source']['pointer'], '/data/attributes/email')
+
+
+class CustomerVerifyTestCase(test.APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.fake = faker.Faker()
+        cls.url = urls.reverse('customer-verify')
+        cls.customer = factories.CustomerFactory()
+
+    def test_should_return_403_if_no_authentication(self):
+        # act
+        response = self.client.get(self.url)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_should_return_403_if_bad_authentication(self):
+        # act
+        self.client.credentials(**utils.build_authentication_credentials(
+            authentication.CUSTOMER_AUTH_SCHEMA,
+            self.customer.user.email,
+            self.fake.numerify(text='##########'),
+        ))
+        response = self.client.get(self.url)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_should_return_200_if_authenticated(self):
+        # act
+        self.client.credentials(**utils.build_customer_authentication_credentials(self.customer))
+        response = self.client.get(self.url)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
