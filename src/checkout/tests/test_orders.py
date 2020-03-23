@@ -720,7 +720,7 @@ class OrderIPNTestCase(test.APITestCase):
         self.mp = get_mp_client.return_value
         self.mp.create_preference.return_value = {'id': PREFERENCE_ID}
 
-        self.afip_patcher = mock.patch('checkout.views.afip', spec=True)
+        self.afip_patcher = mock.patch('checkout.tasks.afip', spec=True)
         self.afip = self.afip_patcher.start()
         self.afip.generate_invoice.return_value = {
             'invoice_number': self.invoice_number,
@@ -728,7 +728,7 @@ class OrderIPNTestCase(test.APITestCase):
             'invoice_code': fake.numerify('######'),
         }
 
-        self.weasyprint_patcher = mock.patch('checkout.views.weasyprint')
+        self.weasyprint_patcher = mock.patch('checkout.tasks.weasyprint')
         self.weasyprint = self.weasyprint_patcher.start()
 
     def tearDown(self):
