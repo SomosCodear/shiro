@@ -13,9 +13,14 @@ class CustomerAuthentication(authentication.BaseAuthentication):
         identity_document = None
         auth_header = authentication.get_authorization_header(request)
         auth_parts = str(auth_header, 'utf-8').split(' ') if auth_header else []
+        auth_schema = auth_parts.pop(0) if len(auth_parts) > 0 else None
 
-        if len(auth_parts) == 3 and auth_parts[0] == CUSTOMER_AUTH_SCHEMA:
-            email, identity_document = auth_parts[1:]
+        if auth_schema == CUSTOMER_AUTH_SCHEMA:
+            if len(auth_parts) == 2:
+                email, identity_document = auth_parts
+            elif len(auth_parts) == 1:
+                token = auth_parts[0]
+                email, identity_document = models.Customer.parse_customer_token(token)
 
         return email, identity_document
 

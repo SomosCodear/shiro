@@ -129,3 +129,16 @@ class CustomerVerifyTestCase(test.APITestCase):
 
         # assert
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_should_return_200_if_authenticated_with_token(self):
+        # arrange
+        token = self.customer.generate_token()
+
+        # act
+        self.client.credentials(
+            **utils.build_authentication_credentials(authentication.CUSTOMER_AUTH_SCHEMA, token),
+        )
+        response = self.client.get(self.url)
+
+        # assert
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.core import validators
+from django.core import validators, signing
 from django.contrib.postgres import fields as postgres_fields
 from model_utils import choices, fields as util_fields, tracker
 from djmoney.models import fields as money_fields
@@ -125,11 +125,22 @@ class Customer(models.Model):
     identity_document = models.CharField(max_length=50)
     company = models.CharField(max_length=100, null=True, blank=True)
 
+    @staticmethod
+    def generate_customer_token(email, identity_document):
+        return signing.dumps((email, identity_document))
+
+    @staticmethod
+    def parse_customer_token(token):
+        return signing.loads(token)
+
     def __str__(self):
         return str(self.user)
 
     def is_identity_document_cuit(self):
         return len(self.identity_document) == self.CUIT_LENGTH
+
+    def generate_token(self):
+        return Customer.generate_customer_token(self.user.email, self.identity_document)
 
 
 class Order(models.Model):
