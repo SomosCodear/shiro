@@ -38,6 +38,12 @@ class ItemOption(models.Model):
     def __str__(self):
         return f'{self.item} option: {self.name}'
 
+    def validate_value(self, value):
+        if self.type == ItemOption.TYPES.EMAIL:
+            validators.EmailValidator({
+                'value': 'Debe ingresar un email válido',
+            })(value)
+
 
 class DiscountCode(models.Model):
     TYPES = choices.Choices(('ITEM', 'Item'), ('ORDER', 'Orden'))
@@ -243,10 +249,7 @@ class OrderItemOption(models.Model):
         return f'{self.item_option}: {self.value}'
 
     def clean(self):
-        if self.item_option.type == ItemOption.TYPES.EMAIL:
-            validators.EmailValidator({
-                'value': 'Debe ingresar un email válido',
-            })(self.value)
+        self.item_option.validate_value(self.value)
 
 
 class Invoice(models.Model):
